@@ -30,8 +30,8 @@ export default component$(() => {
       </div>
 
       <div class="underlay-image">
-{/*         <img width={717} height={717} src="/PracticePlanDraft.png" alt="" />
- */}      </div>
+        <img width={1656} height={3584} src="/frontcone-standard-plan.png" alt="" />
+      </div>
 
       <div class={`auth-outer`}>
           <div class="auth-inner">
