@@ -22,6 +22,21 @@ body:has(.plan-meta-overlay-outer.show-grid) {
   overflow: hidden;
 }
 
+.auth-wrapper .t-dOnDMp {
+  --colors-brandButtonText: white;
+  --colors-defaultButtonBackground: #2e2e2e;
+  --colors-defaultButtonBackgroundHover: #3e3e3e;
+  --colors-defaultButtonBorder: #3e3e3e;
+  --colors-defaultButtonText: white;
+  --colors-dividerBackground: #2e2e2e;
+  --colors-inputBackground: #1e1e1e;
+  --colors-inputBorder: #3e3e3e;
+  --colors-inputBorderHover: gray;
+  --colors-inputBorderFocus: gray;
+  --colors-inputText: white;
+  --colors-inputPlaceholder: darkgray;
+}
+
 /* Make clicks pass-through */
 #nprogress {
   pointer-events: none;
