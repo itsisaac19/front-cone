@@ -1,25 +1,58 @@
+//@ts-nocheck
 import { component$ } from '@builder.io/qwik';
-import type { DocumentHead } from '@builder.io/qwik-city';
+import { type DocumentHead } from '@builder.io/qwik-city';
+import { SupabaseAuth } from '~/components/supabase-auth';
 
 export default component$(() => {
+  //const hash = useHash();
+
   return (
-    <>
-      <h1>Hi 👋</h1>
-      <p>
-        Can't wait to see what you build with qwik!
-        <br />
-        Happy coding.
-      </p>
-    </>
+    <div class="main-outer">
+
+      <div class="logo-wrap">
+        <div class="logo-text">
+          <div>Front</div>
+          <div>Cone</div>
+        </div>
+        <div class="logo-img">
+          <img width={53} height={65} src="/logo-black.png" alt="" />
+        </div>
+      </div>
+
+      <div class="hero-tagline">
+      Front Cone <span class="grad-text">Alpha Testing</span>
+      </div>
+
+      <div class="hero-paragraph">
+      During the Alpha stage of Front Cone, you might
+      encounter various bugs and problems. Please report them
+      as soon as possible. 
+      </div>
+
+      <div class="underlay-image">
+{/*         <img width={717} height={717} src="/PracticePlanDraft.png" alt="" />
+ */}      </div>
+
+      <div class={`auth-outer`}>
+          <div class="auth-inner">
+              <div class="auth-header">
+                  Create an Account
+              </div>
+              <div class="auth-wrapper">
+                  <SupabaseAuth view={'sign_up'} client:load />
+              </div>
+          </div>
+      </div>
+    </div>
   );
 });
 
 export const head: DocumentHead = {
-  title: 'Welcome to Qwik',
+  title: 'Welcome to Front Cone',
   meta: [
     {
       name: 'description',
-      content: 'Qwik site description',
+      content: 'Ultimate Frisbee Coaching Management',
     },
   ],
 };

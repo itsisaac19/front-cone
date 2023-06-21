@@ -1,10 +1,13 @@
 import { component$ } from '@builder.io/qwik';
 import { QwikCityProvider, RouterOutlet, ServiceWorkerRegister } from '@builder.io/qwik-city';
-import { RouterHead } from './components/router-head/router-head';
+import { RouterHead } from './components/router-head';
 
 import './global.css';
 
+import { ProgressBar } from './components/bar';
+
 export default component$(() => {
+
   /**
    * The root of a QwikCity site always start with the <QwikCityProvider> component,
    * immediately followed by the document's <head> and <body>.
@@ -20,6 +23,7 @@ export default component$(() => {
         <RouterHead />
       </head>
       <body lang="en">
+        <ProgressBar />
         <RouterOutlet />
         <ServiceWorkerRegister />
       </body>
