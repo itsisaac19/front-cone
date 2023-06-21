@@ -39,7 +39,7 @@ export default component$(() => {
                   Create an Account
               </div>
               <div class="auth-wrapper">
-                  <SupabaseAuth view={'sign_up'} client:load />
+                  <SupabaseAuth view={'sign_up'} client:only />
               </div>
           </div>
       </div>
