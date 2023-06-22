@@ -196,6 +196,11 @@ body:has(.plan-meta-overlay-outer.show-grid) {
   font-size: 20px;
   font-weight: 500;
 }
+.c-bRTXzr, .supabase-auth-ui_ui-message {
+  color: white;
+  font-family: Satoshi !important;
+  font-weight: 500;
+}
 .supabase-auth-ui_ui-button,
 .supabase-auth-ui_ui-input,
 .supabase-auth-ui_ui-label,
