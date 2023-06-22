@@ -1,4 +1,4 @@
-import { component$, useComputed$, useStore, useVisibleTask$ } from "@builder.io/qwik";
+import { component$, useComputed$, useSignal, useStore, useVisibleTask$ } from "@builder.io/qwik";
 import { BreadCrumbs } from '~/components/crumbs';
 import { createClient } from '@supabase/supabase-js';
 
@@ -6,6 +6,7 @@ import type { Database } from "~/supabase";
 import { routeLoader$, server$ } from "@builder.io/qwik-city";
 import { DrillItem } from "~/components/drill-item";
 import dayjs from "dayjs";
+import { md5 } from "./utils";
 type PlanRow = Database['public']['Tables']['plans']['Row'];
 type DrillRow = Database['public']['Tables']['drills']['Row'];
 
@@ -115,7 +116,11 @@ export default component$(() => {
         }
     });
 
-    const crumbs = useBreadCrumbs();
+    const createBreadCrumbs = ((planData: PlanRow, path: string) => {
+        return <BreadCrumbs path={path} customEnd={planData.title || 'Untitled'} />;
+    })
+
+    const author = useSignal('')
 
     useVisibleTask$(async () => {
         if (tokens.value?.accessToken && tokens.value?.refreshToken) {
@@ -123,7 +128,25 @@ export default component$(() => {
             if (!existing.data.session) {
                 console.error('Existing session does not exist')
             }  else {
-                console.log({existing})
+                console.log({existing});
+                const identities = existing.data.session.user.identities;
+
+                if (identities) {
+                    let lastFound = '';
+                    identities.find(id => {
+                        const fullName = id.identity_data?.full_name;
+                        if (fullName) {
+                            if (!lastFound) lastFound = fullName;
+                            if (fullName.includes(' ')) {
+                                lastFound = fullName;
+                                return true;
+                            }
+                        }
+                    })
+
+                    author.value = lastFound;
+                }
+                
             } 
         }
     })
@@ -136,7 +159,7 @@ export default component$(() => {
                         <img onClick$={() => location.assign('/')} width={53} height={65} src="/logo-black.png" alt="" />    
                     </div>
                     <div class="navigation-crumbs">
-                        {crumbs.value ? crumbs.value : <></>}
+                        {plan.value ? createBreadCrumbs(plan.value.data, plan.value.path) : null}
                     </div>
                 </div>
                 <div class="view-plan-wrap">
@@ -156,6 +179,17 @@ export default component$(() => {
                             <div class="plan-description view">{currentPlanData.value.description || 'No description'}</div>
                             <div class="action-button-grid">
 
+                            </div>
+                            <div class="credit-grid">
+                                <div class="author-box">
+                                    <div class="author-meta">
+                                        <span class="author-label">Created by </span>
+                                        <span class="author-value">{plan.value?.data.user_email}</span>
+                                    </div>
+                                    <div class="author-logo">
+                                        <img class="image-logo" width={80} height={80} src={`https://www.gravatar.com/avatar/${plan.value?.data.user_email ? md5(plan.value.data.user_email) : '00000000000000000000000000000000'}?s=80&d=identicon`} alt="" />
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>

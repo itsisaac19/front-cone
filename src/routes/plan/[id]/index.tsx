@@ -440,6 +440,7 @@ export default component$(() => {
         console.log('Saving:', {drillData});
 
         drillData.user_id = plan.value?.data.user_id;
+        drillData.user_email = plan.value?.data.user_email;
         drillData.plan_uuid = plan.value?.data.uuid;
         drillData.updated_at = dayjs().format();
 
@@ -518,7 +519,7 @@ export default component$(() => {
     const copyText = useSignal('Copy');
 
     useVisibleTask$(() => {
-        shareURL.value = `${window.location.origin}/share/${plan.value?.data.uuid}`;
+        shareURL.value = `${window.location.host}/share/${plan.value?.data.uuid}`;
     })
 
     const sharePlanHandler = $(async () => {
@@ -779,7 +780,7 @@ export default component$(() => {
 export const head: DocumentHead = ({resolveValue}) => {
     const planTitle = resolveValue(usePlan);
     return {
-        title: `${planTitle?.data.title} | Front Cone`,
+        title: `${planTitle?.data.title || 'Untitled'} | Front Cone`,
         meta: [
             {
                 name: 'description',

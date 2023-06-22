@@ -99,6 +99,7 @@ export interface Database {
           time_start: string | null
           title: string | null
           updated_at: string | null
+          user_email: string | null
           user_id: string | null
           uuid: string
         }
@@ -113,6 +114,7 @@ export interface Database {
           time_start?: string | null
           title?: string | null
           updated_at?: string | null
+          user_email?: string | null
           user_id?: string | null
           uuid?: string
         }
@@ -127,6 +129,7 @@ export interface Database {
           time_start?: string | null
           title?: string | null
           updated_at?: string | null
+          user_email?: string | null
           user_id?: string | null
           uuid?: string
         }
@@ -140,6 +143,7 @@ export interface Database {
           status: string | null
           title: string | null
           updated_at: string | null
+          user_email: string | null
           user_id: string | null
           uuid: string
         }
@@ -150,6 +154,7 @@ export interface Database {
           status?: string | null
           title?: string | null
           updated_at?: string | null
+          user_email?: string | null
           user_id?: string | null
           uuid?: string
         }
@@ -160,6 +165,7 @@ export interface Database {
           status?: string | null
           title?: string | null
           updated_at?: string | null
+          user_email?: string | null
           user_id?: string | null
           uuid?: string
         }

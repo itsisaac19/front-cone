@@ -18,14 +18,20 @@ const supabase = createClient('https://mockfcvyjtpqnpctspcq.supabase.co', 'eyJhb
 
 const addEmptyPlan = async (userid: string) => {
     const auth = await supabase.auth.getSession()
-    console.log(auth)
+    console.log(auth);
+    const userEmail = auth.data.session?.user.email;
+    if (!userEmail || !userid) {
+        return null;
+    }
+
     const { data, error } = await supabase
     .from('plans').insert({
-        user_id: userid
+        user_id: userid,
+        user_email: userEmail
     }).select();
 
     console.log({data, error});
-    return data;
+    return data as PlanRow[];
 }
 
 export const useUserPlans = routeLoader$(async (requestEvent) => {
@@ -111,8 +117,12 @@ export default component$(() => {
         const userid = userPlans.value?.userid;
 
         if (userid) {
-            const plan = await addEmptyPlan(userid) as PlanRow[];
-            location.assign(`/plan/${plan[0].uuid}`)
+            const plan = await addEmptyPlan(userid);
+            if (plan) {
+                location.assign(`/plan/${plan[0].uuid}`)
+            } else {
+                console.error('missing params or error occured.')
+            }
         }
     });
 

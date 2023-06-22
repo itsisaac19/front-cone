@@ -440,6 +440,7 @@ ul.breadcrumb li a:hover {
   margin: 50px;
 }
 
+
 .meta-actions-outer {
   display: grid;
   height: auto;
@@ -641,6 +642,57 @@ ul.breadcrumb li a:hover {
   row-gap: 10px;
 }
 
+.credit-grid {
+  display: grid;
+  grid-auto-flow: row;
+  width: auto;
+  overflow: hidden;
+  grid-template-columns: minmax(0, 1fr);
+
+  border: 2px solid #1d1d1d;
+  border-radius: 10px;
+}
+.author-box {
+  height: max-content;
+  width: auto;
+  padding: 12px 14px;
+  font-variation-settings: 'wght' 500;
+
+  display: grid;
+  grid-auto-flow: column;
+  grid-template-columns: 1fr max-content;
+}
+.author-meta {
+  display: grid;
+  grid-auto-flow: row;
+  height: max-content;
+  row-gap: 0px;
+}
+.author-label {
+  color: #666;
+  margin: auto 5px auto 0px;
+  font-size: 14px;
+}
+.author-value {
+  color: rgb(255, 255, 255);
+  margin: auto 0 auto 0px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: calc(100%);
+}
+.author-logo {
+  margin: auto 0 auto 15px;
+  display: grid;
+}
+.image-logo {
+  border: 2px solid rgb(33, 33, 33);
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+}
+
+
 
 .drill-library-outer {
   display: grid;
@@ -769,6 +821,25 @@ ul.breadcrumb li a:hover {
 }
 .creation-outer.view {
   margin: 0 0 0 80px;
+}
+@media screen and (max-width: 1000px) {
+  .view-plan-wrap {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: max-content 1fr;
+    margin: 20px;
+  }
+  .creation-outer.view {
+    margin: 20px 0 0 0px;
+  }
+  .plan-title.view {
+    font-size: 22px;
+  }
+  .updated-at-text.view {
+    font-size: 14px;
+  }
+  .plan-description.view {
+    font-size: 16px;
+  }
 }
 .creation-inner {
   display: grid;
