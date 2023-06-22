@@ -4,7 +4,7 @@ import { BreadCrumbs } from '~/components/crumbs';
 import { createClient } from '@supabase/supabase-js';
 
 import type { Database } from "~/supabase";
-import { routeLoader$, server$ } from '@builder.io/qwik-city';
+import { type DocumentHead, routeLoader$, server$ } from '@builder.io/qwik-city';
 import { PlanItem } from '~/components/plan-item';
 type PlanRow = Database['public']['Tables']['plans']['Row'];
 
@@ -159,3 +159,14 @@ export default component$(() => {
     );
 });
 
+export const head: DocumentHead = () => {
+    return {
+        title: `My Plans | Front Cone`,
+        meta: [
+            {
+                name: 'description',
+                content: 'An overview of your plans.',
+            },
+        ],
+    };
+}
