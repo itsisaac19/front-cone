@@ -1,11 +1,10 @@
 import { $, component$, useVisibleTask$ } from '@builder.io/qwik';
-import { BreadCrumbs } from '~/components/crumbs';
-
 import { createClient } from '@supabase/supabase-js';
 
 import type { Database } from "~/supabase";
 import { type DocumentHead, routeLoader$, server$ } from '@builder.io/qwik-city';
 import { PlanItem } from '~/components/plan-item';
+import { Navbar } from '~/components/navbar';
 type PlanRow = Database['public']['Tables']['plans']['Row'];
 
 const supabase = createClient('https://mockfcvyjtpqnpctspcq.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1vY2tmY3Z5anRwcW5wY3RzcGNxIiwicm9sZSI6ImFub24iLCJpYXQiOjE2ODY4MDc4ODQsImV4cCI6MjAwMjM4Mzg4NH0.bcBpMwUR3kdjXSbZAePUpExkmX0UdgRM_ANtI9G1v0s', {
@@ -69,7 +68,9 @@ const detect = server$(() => {
 
 export const useBreadCrumbs = routeLoader$((requestEvent) => {
     const path = requestEvent.pathname;
-    return <BreadCrumbs path={path} />;
+    return {
+        path,
+    }
 })
 
 export const useTokens = routeLoader$(({ cookie }) => {
@@ -129,14 +130,7 @@ export default component$(() => {
     return (
         <div class="dashboard-outer">
             <div class="dashboard-inner">
-                <div class="dashboard-top-bar">
-                    <div class="hamburger">
-                        <img onClick$={() => location.assign('/')} width={53} height={65} src="/logo-black.png" alt="" />    
-                    </div>
-                    <div class="navigation-crumbs">
-                        {crumbs.value ? crumbs.value : <></>}
-                    </div>
-                </div>
+                {crumbs.value ? <Navbar path={crumbs.value.path} /> : <></>}
                 <div class="dashboard-content">
                     <div class="dash-header-wrap">
                         <div class="dash-header">

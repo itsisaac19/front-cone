@@ -1,5 +1,4 @@
 import { component$, useComputed$, useSignal, useStore, useVisibleTask$ } from "@builder.io/qwik";
-import { BreadCrumbs } from '~/components/crumbs';
 import { createClient } from '@supabase/supabase-js';
 
 import type { Database } from "~/supabase";
@@ -7,6 +6,7 @@ import { routeLoader$, server$ } from "@builder.io/qwik-city";
 import { DrillItem } from "~/components/drill-item";
 import dayjs from "dayjs";
 import { md5 } from "./utils";
+import { Navbar } from "~/components/navbar";
 type PlanRow = Database['public']['Tables']['plans']['Row'];
 type DrillRow = Database['public']['Tables']['drills']['Row'];
 
@@ -26,11 +26,6 @@ const detect = server$(() => {
             //console.log('Authenticated User:', session?.user)
         }
     })
-})
-
-export const useBreadCrumbs = routeLoader$((requestEvent) => {
-    const path = requestEvent.pathname;
-    return <BreadCrumbs path={path} />;
 })
 
 export const useTokens = routeLoader$(({ cookie }) => {
@@ -116,10 +111,6 @@ export default component$(() => {
         }
     });
 
-    const createBreadCrumbs = ((planData: PlanRow, path: string) => {
-        return <BreadCrumbs path={path} customEnd={planData.title || 'Untitled'} />;
-    })
-
     const author = useSignal('')
 
     useVisibleTask$(async () => {
@@ -147,6 +138,60 @@ export default component$(() => {
                     author.value = lastFound;
                 }
                 
+                const channel = supabase.channel('drills-channel')
+                .on('postgres_changes', { 
+                    event: '*',
+                    schema: 'public', 
+                    table: 'drills' 
+                }, (payload) => {
+                    console.log('DRILL change received:', payload);
+                    if (payload.eventType === 'DELETE') {
+                        /* const drill = userDrills?.value?.find(drillData => {
+                            return drillData.uuid == payload.old.uuid;
+                        })
+                        if (drill) {
+                            realTimeEvent.value = payload;
+                        } else {
+                            console.log(`Change is NOT mine: `, payload.eventType);
+                        } */
+                    }
+    
+                    if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
+                        const userid = (payload.new as DrillRow).user_id;
+                        console.log('insert row', {userid});
+
+                        if (plan.value?.data.user_id && plan.value.data.user_id == userid) {
+                            realTimeEvent.value = payload;
+                        } else {
+                            console.log(`Change is NOT mine: `, payload.eventType);
+                        }
+                    }
+                }).on('postgres_changes', { 
+                    event: '*',
+                    schema: 'public', 
+                    table: 'plans' 
+                }, (payload) => {
+                    console.log('PLAN change received:', payload);
+                    if (payload.eventType === 'DELETE') {
+                        console.log('DELETE')
+                    }
+                
+                    if (payload.eventType === 'UPDATE') {
+                        const userid = (payload.new as DrillRow).user_id;
+                        if (plan.value?.data.user_id && plan.value.data.user_id == userid) {
+                            currentPlanData.value = payload.new;
+                        } else {
+                            console.log(`Change is NOT mine: `, payload.eventType);
+                            currentPlanData.value = payload.new;
+                        } 
+                        console.log('update plan', {userid})
+                    }
+                }).subscribe()
+
+                window.onbeforeunload = () => {
+                    console.log('REMOVING')
+                    supabase.removeChannel(channel)
+                }
             } 
         }
     })
@@ -154,14 +199,7 @@ export default component$(() => {
     return (
         <div class="dashboard-outer">
             <div class="dashboard-inner">
-                <div class="dashboard-top-bar">
-                    <div class="hamburger">
-                        <img onClick$={() => location.assign('/')} width={53} height={65} src="/logo-black.png" alt="" />    
-                    </div>
-                    <div class="navigation-crumbs">
-                        {plan.value ? createBreadCrumbs(plan.value.data, plan.value.path) : null}
-                    </div>
-                </div>
+                {plan.value ? <Navbar path={plan.value.path} planData={currentPlanData.value} /> : <></>}
                 <div class="view-plan-wrap">
                     <div class="meta-actions-outer">
                         <div class="meta-actions-inner">
@@ -196,6 +234,13 @@ export default component$(() => {
 
                     <div class="creation-outer view">
                         <div class="creation-inner">
+                            <div class="creation-label">
+                                <div class="creation-label-line-left"></div>
+                                <div class="creation-label-text">
+                                Practice Plan
+                                </div>
+                                <div class="creation-label-line-right"></div>
+                            </div>
                             <div class="creation-grid">
                                 {planDrills.value ? planDrills.value.map((drillData: Partial<DrillRow>, index) => {
                                     return <DrillItem data={drillData} key={drillData.uuid} index={index} />

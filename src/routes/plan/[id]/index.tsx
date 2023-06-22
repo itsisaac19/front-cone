@@ -1,5 +1,4 @@
 import { $, component$, useComputed$, useSignal, useStore, useTask$, useVisibleTask$ } from "@builder.io/qwik";
-import { BreadCrumbs } from '~/components/crumbs';
 
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from "~/supabase";
@@ -58,10 +57,6 @@ export const useUserDrills = routeLoader$(async (requestEvent) => {
     } else {
         return [];
     }
-})
-
-const createBreadCrumbs = ((planData: PlanRow, path: string) => {
-    return <BreadCrumbs path={path} customEnd={planData.title || 'Untitled'} />;
 })
 
 
@@ -138,6 +133,7 @@ const addPlanToRecovery = async (planData: Partial<PlanRow>) => {
 }
 
 import anime from 'animejs';
+import { Navbar } from "~/components/navbar";
 
 
 const detect = server$(() => {
@@ -595,14 +591,7 @@ export default component$(() => {
 
     return (
     <div>
-        <div class="dashboard-top-bar">
-            <div class="hamburger">
-                <img onClick$={() => location.assign('/')} width={53} height={65} src="/logo-black.png" alt="" />    
-            </div>
-            <div class="navigation-crumbs">
-                {plan.value ? createBreadCrumbs(plan.value.data, plan.value.path) : null}
-            </div>
-        </div>
+        {plan.value ? <Navbar path={plan.value.path} planData={currentPlanData.value} /> : <></>}
 
         <div class="create-plan-wrap">
             <div class="meta-actions-outer">
@@ -644,6 +633,13 @@ export default component$(() => {
 
             <div class="creation-outer">
                 <div class="creation-inner">
+                    <div class="creation-label">
+                        <div class="creation-label-line-left"></div>
+                        <div class="creation-label-text">
+                        Practice Plan
+                        </div>
+                        <div class="creation-label-line-right"></div>
+                    </div>
                     <div class="creation-grid">
                     {planDrills.value ? planDrills.value.map((drillData: Partial<DrillRow>, index) => {
                         return <DrillItem data={drillData} editHandler={editDrillHandler} key={drillData.uuid} index={index} />

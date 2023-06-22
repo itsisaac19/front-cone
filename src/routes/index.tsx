@@ -26,7 +26,7 @@ export default component$(() => {
       <div class="hero-paragraph">
       During the Alpha stage of Front Cone, you might
       encounter various bugs and problems. Please report them
-      as soon as possible. 
+      as soon as possible to <u>isaactsai6@gmail.com</u>
       </div>
 
       <div class="underlay-image">

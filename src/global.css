@@ -847,6 +847,29 @@ ul.breadcrumb li a:hover {
   padding: 0px;
   row-gap: 20px;
 }
+.creation-label {
+  color: white;
+  text-transform: uppercase;
+  display: grid;
+  grid-template-columns: 1fr max-content 1fr;
+}
+.creation-label-text {
+  font-variation-settings: 'wght' 500;
+  font-size: 14px;
+  letter-spacing: 1px;
+}
+.creation-label-line-left {
+  background: #666;
+  height: 2px;
+  width: auto;
+  margin: auto 15px auto 0;
+}
+.creation-label-line-right {
+  background: #666;
+  height: 2px;
+  width: auto;
+  margin: auto 0 auto 15px;
+}
 
 .creation-grid {
   display: grid;

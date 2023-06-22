@@ -18,8 +18,8 @@ export const PlanItem = component$((data: PlanRow) => {
                     <div class="plan-edit">
                         <Link href={`/plan/${data.uuid}`}>Edit Plan</Link>
                     </div>
-                    <u class="plan-copy-link" data-link={data.shared_link}>Copy Link</u>
-                </div>
+{/*                     <u class="plan-copy-link" data-link={data.shared_link}>Copy Link</u>
+ */}                </div>
             </div>
         </div>
     )
