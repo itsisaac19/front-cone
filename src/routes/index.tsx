@@ -54,5 +54,33 @@ export const head: DocumentHead = {
       name: 'description',
       content: 'Ultimate Frisbee Coaching Management',
     },
+    {
+      property: 'og:image',
+      content: `${import.meta.env.DEV ? 'http://localhost:5173' : 'https://frontcone.com'}/frontconeog.png`
+    },
+    {
+      name: 'og:title',
+      content: 'Welcome to Front Cone',
+    },
+    {
+      name: 'og:description',
+      content: 'Ultimate Frisbee Coaching Management',
+    },
+    {
+      property: 'twitter:card',
+      content: `summary_large_image`
+    },
+    {
+      property: 'twitter:image',
+      content: `${import.meta.env.DEV ? 'http://localhost:5173' : 'https://frontcone.com'}/frontconeog.png`
+    },
+    {
+      name: 'twitter:title',
+      content: 'Welcome to Front Cone',
+    },
+    {
+      name: 'twitter:description',
+      content: 'Ultimate Frisbee Coaching Management',
+    },
   ],
 };
