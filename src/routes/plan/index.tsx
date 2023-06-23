@@ -1,4 +1,4 @@
-import { $, component$, useVisibleTask$ } from '@builder.io/qwik';
+import { $, component$, useSignal, useVisibleTask$ } from '@builder.io/qwik';
 import { createClient } from '@supabase/supabase-js';
 
 import type { Database } from "~/supabase";
@@ -102,6 +102,8 @@ export default component$(() => {
 
     const tokens = useTokens();
     detect();
+    
+    const currentUserEmail = useSignal('')
 
     useVisibleTask$(async () => {
         if (tokens.value?.accessToken && tokens.value?.refreshToken) {
@@ -110,6 +112,9 @@ export default component$(() => {
                 console.error('Existing session does not exist')
             }  else {
                 console.log({existing})
+                if (existing.data.session.user.email) {
+                    currentUserEmail.value = existing.data.session.user.email;
+                }
             } 
         }
     })
@@ -130,7 +135,7 @@ export default component$(() => {
     return (
         <div class="dashboard-outer">
             <div class="dashboard-inner">
-                {crumbs.value ? <Navbar path={crumbs.value.path} /> : <></>}
+                {crumbs.value ? <Navbar path={crumbs.value.path} currentEmail={currentUserEmail.value} /> : <></>}
                 <div class="dashboard-content">
                     <div class="dash-header-wrap">
                         <div class="dash-header">

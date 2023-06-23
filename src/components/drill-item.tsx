@@ -67,7 +67,7 @@ export const DrillItem = component$<DrillItemProps>((props) => {
                 <div class="drill-primary-content">
                     <div class="drill-content-meta">
                         <div class="drill-item-title">{data.title || 'Untitled'}</div>
-                        <div class="drill-item-description">{data.description ? (data.description.length > 150 ? data.description.slice(0, 150) + '...' : data.description) : 'No description'}</div>
+                        <div class="drill-item-description">{data.description ? data.description : 'No description'}</div>
                     </div>
 
                     <div class="drill-index-box">

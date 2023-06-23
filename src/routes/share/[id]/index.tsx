@@ -1,8 +1,8 @@
-import { component$, useComputed$, useSignal, useStore, useVisibleTask$ } from "@builder.io/qwik";
+import { $, component$, useComputed$, useSignal, useStore, useVisibleTask$ } from "@builder.io/qwik";
 import { createClient } from '@supabase/supabase-js';
 
 import type { Database } from "~/supabase";
-import { routeLoader$, server$ } from "@builder.io/qwik-city";
+import { type DocumentHead, routeLoader$, server$ } from "@builder.io/qwik-city";
 import { DrillItem } from "~/components/drill-item";
 import dayjs from "dayjs";
 import { md5 } from "./utils";
@@ -112,6 +112,7 @@ export default component$(() => {
     });
 
     const author = useSignal('')
+    const currentUserEmail = useSignal('')
 
     useVisibleTask$(async () => {
         if (tokens.value?.accessToken && tokens.value?.refreshToken) {
@@ -120,6 +121,9 @@ export default component$(() => {
                 console.error('Existing session does not exist')
             }  else {
                 console.log({existing});
+                if (existing.data.session.user.email) {
+                    currentUserEmail.value = existing.data.session.user.email;
+                }
                 const identities = existing.data.session.user.identities;
 
                 if (identities) {
@@ -196,36 +200,94 @@ export default component$(() => {
         }
     })
 
+    const shareURL = useSignal('');
+
+    const copyText = useSignal('Copy');
+
+    useVisibleTask$(() => {
+        shareURL.value = `${window.location.host}/share/${plan.value?.data.uuid}`;
+    })
+
+    const sharePlanHandler = $(async () => {
+        if (plan.value?.data.uuid) {
+            const shareData = {
+                title: 'Front Cone',
+                text: plan.value?.data.title || 'Untitled',
+                url: `${window.location.origin}/share/${plan.value?.data.uuid}`,
+            };
+
+            try {
+                await navigator.share(shareData);
+            } catch (err) {
+                console.error(err)
+                alert(err)
+            }
+        }
+    })
+    const copyLinkHandler = $(async () => {
+        if (plan.value?.data.uuid) {
+            const url = `${window.location.origin}/share/${plan.value?.data.uuid}`;
+
+            try {
+                await navigator.clipboard.writeText(url);
+                copyText.value = 'Copied';
+                setTimeout(() => {
+                    copyText.value = 'Copy'
+                }, 2000)
+            } catch (err) {
+                console.error(err)
+            }
+        }
+    })
+
     return (
         <div class="dashboard-outer">
             <div class="dashboard-inner">
-                {plan.value ? <Navbar path={plan.value.path} planData={currentPlanData.value} /> : <></>}
+                {plan.value ? <Navbar path={plan.value.path} planData={currentPlanData.value} currentEmail={currentUserEmail.value} /> : <></>}
                 <div class="view-plan-wrap">
                     <div class="meta-actions-outer">
                         <div class="meta-actions-inner">
                             <div class="updated-at-text view">
-                                {currentPlanData.value.updated_at ? 
-                                <>
-                                    <span>Updated {dayjs(currentPlanData.value.updated_at).fromNow()}</span>
-                                    <span> | </span>
-                                    <span> {dayjs(currentPlanData.value.updated_at).format('M.D.YYYY h:mm A')} </span>
-                                </>
-                                : <></>
-                                }
+                                    {currentPlanData.value.updated_at ? 
+                                    <>
+                                        <span>Updated {dayjs(currentPlanData.value.updated_at).fromNow()}</span>
+                                        <span> | </span>
+                                        <span> {dayjs(currentPlanData.value.updated_at).format('M.D.YYYY h:mm A')} </span>
+                                    </>
+                                    : <></>
+                                    }
                             </div>
                             <div class="plan-title view">{currentPlanData.value.title || 'Untitled'}</div>
-                            <div class="plan-description view">{currentPlanData.value.description || 'No description'}</div>
-                            <div class="action-button-grid">
+                                <div class="plan-description view">{currentPlanData.value.description || 'No description'}</div>
+                                <div class="action-button-grid">
+                                <div class="action-button-grid">
+                                    <div class="plan-share-wrap">
+                                        <button class="plan-share-button" onClick$={sharePlanHandler}>
+                                        <span class="plan-share-text">Share Plan</span>
+                                        <svg class="plan-share-icon" viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path><polyline points="16 6 12 2 8 6"></polyline><line x1="12" y1="2" x2="12" y2="15"></line></svg>
+                                        </button>
+                                        <div class="plan-copy-wrap" onClick$={copyLinkHandler}>
+                                            <span class="plan-copy-button-url">
+                                                {shareURL.value}
+                                            </span>
+                                            <div class="plan-url-gradient"></div>
 
-                            </div>
-                            <div class="credit-grid">
-                                <div class="author-box">
-                                    <div class="author-meta">
-                                        <span class="author-label">Created by </span>
-                                        <span class="author-value">{plan.value?.data.user_email}</span>
+                                            <div class="plan-copy-button">
+                                                <svg class="plan-copy-icon" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" ><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                                                <span>{copyText.value}</span>
+                                            </div>
+                                        </div>
                                     </div>
-                                    <div class="author-logo">
-                                        <img class="image-logo" width={80} height={80} src={`https://www.gravatar.com/avatar/${plan.value?.data.user_email ? md5(plan.value.data.user_email) : '00000000000000000000000000000000'}?s=80&d=identicon`} alt="" />
+                                </div>
+                                <div class="credit-grid">
+                                    <div class="author-box">
+                                        <div class="author-meta">
+                                            <span class="author-label">Created by </span>
+                                            <span class="author-value">{plan.value?.data.user_email}</span>
+                                        </div>
+                                        <div class="author-logo">
+                                            <img class="image-logo" width={80} height={80} src={`https://www.gravatar.com/avatar/${plan.value?.data.user_email ? md5(plan.value.data.user_email) : '00000000000000000000000000000000'}?s=80&d=identicon`} alt="" />
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -254,3 +316,16 @@ export default component$(() => {
         </div>
     );
 });
+
+export const head: DocumentHead = ({resolveValue}) => {
+    const planTitle = resolveValue(usePlan);
+    return {
+        title: `${planTitle?.data.title || 'Untitled'} | Front Cone`,
+        meta: [
+            {
+                name: 'description',
+                content: planTitle?.data.description || 'No description',
+            },
+        ],
+    };
+}

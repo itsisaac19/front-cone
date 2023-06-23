@@ -252,6 +252,7 @@ body:has(.plan-meta-overlay-outer.show-grid) {
   display: grid;
   grid-template-columns: max-content 1fr max-content max-content;
   grid-auto-flow: column;
+  padding: 0 10px 0 0;
 }
 .dashboard-content {
   margin: 40px 6vw;
@@ -913,8 +914,9 @@ ul.breadcrumb li a:hover {
   color: #666666;
   margin: 10px 0 20px 0;
   font-variation-settings: 'wght' 500;
-  font-size: 14px;
-  line-height: 130%;
+  font-size: 15px;
+  line-height: 140%;
+  max-width: 530px;
 }
 .drill-index-box {
   color: rgb(178, 178, 178);

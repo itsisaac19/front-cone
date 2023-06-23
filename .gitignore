@@ -40,3 +40,4 @@ lerna-debug.log*
 
 # Vercel
 .vercel
+src/components/feedback-widget.tsx

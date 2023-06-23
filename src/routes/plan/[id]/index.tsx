@@ -298,14 +298,25 @@ export default component$(() => {
         return initial; 
     })
 
+    const currentUserEmail = useSignal('')
+
     useVisibleTask$(async () => {
         if (tokens.value?.accessToken && tokens.value?.refreshToken) {
             const existing = await supabase.auth.getSession();
 
             if (!existing.data.session) {
                 console.error('Existing session does not exist')
+                location.assign('/')
             } else {
-                console.log({existing})
+                console.log({existing});
+                if (existing.data.session.user.email) {
+                    currentUserEmail.value = existing.data.session.user.email;
+                }
+
+                if (plan.value && existing.data.session.user.id != plan.value.data.user_id) {
+                    console.log('NOT MY PLAN!')
+                    location.assign(`/share/${plan.value.data.uuid}`)
+                }
             } 
 
             const channel = supabase.channel('drills-channel')
@@ -591,7 +602,7 @@ export default component$(() => {
 
     return (
     <div>
-        {plan.value ? <Navbar path={plan.value.path} planData={currentPlanData.value} /> : <></>}
+        {plan.value ? <Navbar path={plan.value.path} planData={currentPlanData.value} currentEmail={currentUserEmail.value} /> : <></>}
 
         <div class="create-plan-wrap">
             <div class="meta-actions-outer">
@@ -780,7 +791,7 @@ export const head: DocumentHead = ({resolveValue}) => {
         meta: [
             {
                 name: 'description',
-                content: planTitle?.data.description || '',
+                content: planTitle?.data.description || 'No description',
             },
         ],
     };
