@@ -1,12 +1,13 @@
-import { $, component$, useComputed$, useSignal, useStore, useVisibleTask$ } from "@builder.io/qwik";
+import { $, component$, useComputed$, useSignal, useStore, useTask$, useVisibleTask$ } from "@builder.io/qwik";
 import { createClient } from '@supabase/supabase-js';
 
 import type { Database } from "~/supabase";
 import { type DocumentHead, routeLoader$, server$ } from "@builder.io/qwik-city";
-import { DrillItem } from "~/components/drill-item";
+import { CurrentLiveDrillBox, DrillItem } from "~/components/drill-item";
 import dayjs from "dayjs";
 import { md5 } from "./utils";
 import { Navbar } from "~/components/navbar";
+import anime from "animejs";
 type PlanRow = Database['public']['Tables']['plans']['Row'];
 type DrillRow = Database['public']['Tables']['drills']['Row'];
 
@@ -111,8 +112,54 @@ export default component$(() => {
         }
     });
 
+    const liveMetaStore = useStore({
+        status: 'On Schedule',
+        currentTime: dayjs().format('h:mm:ss A'),
+        currentDrills: [] as Partial<DrillRow>[],
+    });
+
+    useVisibleTask$(() => {
+        setInterval(() => {
+            liveMetaStore.currentTime = dayjs().format('h:mm:ss A');
+        }, 1000)
+    })
+
+
+    const currentLiveDrills = planDrills.value?.filter(drillData => {
+        const start = dayjs(drillData.time_start, 'hh:mm A');
+        const end = dayjs(drillData.time_end, 'hh:mm A');
+
+        if (dayjs().isAfter(start) && dayjs().isBefore(end)) {
+            return true;
+        }
+    }) || []; 
+
+    const isLive = currentPlanData.value?.status == 'live' ? true : false;
+
     const author = useSignal('')
     const currentUserEmail = useSignal('')
+
+    const runPlanHandler = $(() => {
+        if (currentPlanData.value?.status === 'live') {
+            anime({
+                targets: '.creation-grid',
+                rowGap: ['20px', '50px'],
+                translateY: ['0px', '40px'],
+                easing: 'easeOutSine',
+                duration: 800
+            })
+
+            return 
+        }
+
+        anime({
+            targets: '.creation-grid',
+            rowGap: ['50px', '20px'],
+            translateY: ['40px', '0px'],
+            easing: 'easeOutSine',
+            duration: 800
+        });
+    })
 
     useVisibleTask$(async () => {
         if (tokens.value?.accessToken && tokens.value?.refreshToken) {
@@ -189,6 +236,7 @@ export default component$(() => {
                             currentPlanData.value = payload.new;
                         } 
                         console.log('update plan', {userid})
+                        runPlanHandler();
                     }
                 }).subscribe()
 
@@ -239,6 +287,8 @@ export default component$(() => {
             }
         }
     })
+
+
 
     return (
         <div class="dashboard-outer">
@@ -296,6 +346,27 @@ export default component$(() => {
 
                     <div class="creation-outer view">
                         <div class="creation-inner">
+                            <div class="creation-live-tools">
+                                <div class={`live-tools-grid ${isLive ? 'live' : ''}`}>
+                                {currentLiveDrills.length > 0 ?
+                                    <div class="live-current-drill-wrap">
+                                        <span class="live-current-drill-label">Current Drill{currentLiveDrills.length > 1 ? 's' : ''}</span>
+                                        <div class="live-current-drill-grid">
+                                        {currentLiveDrills.map((drillData: Partial<DrillRow>) => {
+                                            return <CurrentLiveDrillBox data={drillData} key={drillData.uuid} />
+                                        })}
+                                        </div>
+                                    </div> 
+                                : null}
+                                    <div class="live-timeline-meta">
+                                        <span class="live-timeline-drill-label">Timeline</span>
+                                        <span class="timeline-current-state">{isLive ? 'LIVE' : 'STANDBY'}</span>
+                                        <span class="timeline-meta-spacer"> | </span>
+                                        <span class="timeline-current-time">{liveMetaStore.currentTime}</span>
+                                        <span class="timeline-status on-time">On Schedule</span>
+                                    </div>
+                                </div>
+                            </div>
                             <div class="creation-label">
                                 <div class="creation-label-line-left"></div>
                                 <div class="creation-label-text">
@@ -303,7 +374,7 @@ export default component$(() => {
                                 </div>
                                 <div class="creation-label-line-right"></div>
                             </div>
-                            <div class="creation-grid">
+                            <div class={`creation-grid ${isLive ? 'live' : ''}`}>
                                 {planDrills.value ? planDrills.value.map((drillData: Partial<DrillRow>, index) => {
                                     return <DrillItem data={drillData} key={drillData.uuid} index={index} />
                                 })  : null}

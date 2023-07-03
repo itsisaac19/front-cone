@@ -110,6 +110,7 @@ export default component$(() => {
             const existing = await supabase.auth.getSession();
             if (!existing.data.session) {
                 console.error('Existing session does not exist')
+                location.assign('/')
             }  else {
                 console.log({existing})
                 if (existing.data.session.user.email) {

@@ -8,7 +8,7 @@ import dayjs from "dayjs";
 import relativeTime from 'dayjs/plugin/relativeTime';
 dayjs.extend(relativeTime)
 
-import { DrillItem } from "~/components/drill-item";
+import { CurrentLiveDrillBox, DrillItem } from "~/components/drill-item";
 type PlanRow = Database['public']['Tables']['plans']['Row'];
 type DrillRow = Database['public']['Tables']['drills']['Row'];
 
@@ -134,6 +134,7 @@ const addPlanToRecovery = async (planData: Partial<PlanRow>) => {
 
 import anime from 'animejs';
 import { Navbar } from "~/components/navbar";
+import { LiveBar } from "~/components/live-bar";
 
 
 const detect = server$(() => {
@@ -241,6 +242,7 @@ export default component$(() => {
 
 
     const savePlanHandler = $(async (e?: any) => {
+        console.log('ah')
         if (e) {
             (e.target as HTMLElement).classList.add('saving');
         }
@@ -364,7 +366,7 @@ export default component$(() => {
                         console.log(`Change is NOT mine: `, payload.eventType);
                     } 
                 }
-            }).subscribe()
+            }).subscribe();
 
             window.onbeforeunload = () => {
                 console.log('REMOVING')
@@ -437,6 +439,21 @@ export default component$(() => {
 
         showOverlayHandler('Edit', drillData);
     })
+
+    const liveMetaStore = useStore({
+        status: 'On Schedule',
+        currentTime: dayjs().format('h:mm:ss A'),
+        currentDrills: [] as Partial<DrillRow>[],
+    });
+
+    const currentLiveDrills = planDrills.value?.filter(drillData => {
+        const start = dayjs(drillData.time_start, 'hh:mm A');
+        const end = dayjs(drillData.time_end, 'hh:mm A');
+
+        if (dayjs().isAfter(start) && dayjs().isBefore(end)) {
+            return true;
+        }
+    }) || []; 
 
     const saveDrillHandler = $(async () => {
         const creationSaveButton = document.querySelector('.creation-save-button');
@@ -600,6 +617,48 @@ export default component$(() => {
         });
     })
 
+
+    const runPlanButtonText = useSignal('Run Live');
+    const runPlanHandler = $(() => {
+        if (runPlanButtonText.value === 'Run Live') {
+            anime({
+                targets: '.creation-grid',
+                rowGap: ['20px', '50px'],
+                translateY: ['0px', '40px'],
+                easing: 'easeOutSine',
+                duration: 800
+            })
+
+            currentPlanData.value.status = 'live';
+            savePlanHandler();
+
+            return runPlanButtonText.value = 'Stop Live';
+        }
+
+        anime({
+            targets: '.creation-grid',
+            rowGap: ['50px', '20px'],
+            translateY: ['40px', '0px'],
+            easing: 'easeOutSine',
+            duration: 800
+        });
+
+        currentPlanData.value.status = null;
+        savePlanHandler();
+
+        runPlanButtonText.value = 'Run Live';
+    })
+
+    useVisibleTask$(() => {
+        if (plan.value?.data.status == 'live') {
+            runPlanHandler();
+        }
+
+        setInterval(() => {
+            liveMetaStore.currentTime = dayjs().format('h:mm:ss A');
+        }, 1000)
+    })
+
     return (
     <div>
         {plan.value ? <Navbar path={plan.value.path} planData={currentPlanData.value} currentEmail={currentUserEmail.value} /> : <></>}
@@ -644,6 +703,27 @@ export default component$(() => {
 
             <div class="creation-outer">
                 <div class="creation-inner">
+                    <div class="creation-live-tools">
+                        <div class={`live-tools-grid ${runPlanButtonText.value === 'Stop Live' ? 'live' : ''}`}>
+                            <button 
+                            class={`run-plan-button`}
+                            onClick$={runPlanHandler}
+                            >{runPlanButtonText.value}</button>
+                            <div class="live-current-drill-wrap">
+                                <span class="live-current-drill-label">Current Drill{currentLiveDrills.length > 1 ? 's' : ''}</span>
+                                <span class="live-current-drill-grid">{currentLiveDrills.map((drillData: Partial<DrillRow>) => {
+                                    return <CurrentLiveDrillBox data={drillData} key={drillData.uuid} />
+                                })}</span>
+                            </div>
+                            <div class="live-timeline-meta">
+                                <span class="live-timeline-drill-label">Timeline</span>
+                                <span class="timeline-current-state">{runPlanButtonText.value === 'Stop Live' ? 'LIVE' : 'STANDBY'}</span>
+                                <span class="timeline-meta-spacer"> | </span>
+                                <span class="timeline-current-time">{liveMetaStore.currentTime}</span>
+                                <span class="timeline-status on-time">On Schedule</span>
+                            </div>
+                        </div>
+                    </div>
                     <div class="creation-label">
                         <div class="creation-label-line-left"></div>
                         <div class="creation-label-text">
@@ -651,7 +731,8 @@ export default component$(() => {
                         </div>
                         <div class="creation-label-line-right"></div>
                     </div>
-                    <div class="creation-grid">
+                    <div class={`creation-grid ${runPlanButtonText.value === 'Stop Live' ? 'live' : ''}`}>
+
                     {planDrills.value ? planDrills.value.map((drillData: Partial<DrillRow>, index) => {
                         return <DrillItem data={drillData} editHandler={editDrillHandler} key={drillData.uuid} index={index} />
                     })  : null}
