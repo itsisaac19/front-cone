@@ -1546,6 +1546,7 @@ ul.breadcrumb li a:hover {
 }
 
 .drill-edit-overlay-outer {
+  z-index: 100;
   display: none;
   position: fixed;
   top: 0;
