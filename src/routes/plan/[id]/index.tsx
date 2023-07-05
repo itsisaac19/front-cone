@@ -18,6 +18,8 @@ const supabase = createClient('https://mockfcvyjtpqnpctspcq.supabase.co', 'eyJhb
     }
 });
 
+
+
 export const usePlan = routeLoader$(async (requestEvent) => {
     const planUUID = requestEvent.params.id;
 
@@ -141,7 +143,7 @@ const detect = server$(() => {
     supabase.auth.onAuthStateChange(async (event) => {
         if (event == 'SIGNED_IN') {
             
-            const session = await supabase.auth.getSession();
+            //const session = await supabase.auth.getSession();
             //console.log({session})
             //console.log('Authenticated User:', session?.user)
         }
@@ -187,46 +189,49 @@ const getDrillIndex = (drillUUID?: string) => {
     }
 }
 
-const showSettingsHandler = $(async () => {
-    const overlay = document.querySelector('.plan-meta-overlay-outer') as HTMLElement;
-
-    overlay?.classList.add('show-grid');
-    anime({
-        targets: '.plan-meta-overlay-outer',
-        opacity: {
-            value: [0, 1],
-            duration: 100,
-            easing: 'easeOutSine'
-        },
-        scale: {
-            value: [0.9, 1],
-            duration: 200,
-            delay: 350,
-            easing: 'easeOutSine'
-        },
-    })
-})
-
-const hideSettingsHandler = $(async () => {
-    const overlay = document.querySelector('.plan-meta-overlay-outer');
-    await anime({
-        targets: '.plan-meta-overlay-outer',
-        opacity: {
-            value: [1, 0],
-            duration: 100,
-            delay: 200
-        },
-        scale: [1, 0.9],
-        duration: 200,
-        easing: 'easeOutSine',
-    }).finished;
-
-    setTimeout(() => {
-        overlay?.classList.remove('show-grid');
-    }, 300)
-})
-
 export default component$(() => {
+    const globalPrefersReducedMotion = useSignal(false);
+
+    const showSettingsHandler = $(async () => {
+
+        const overlay = document.querySelector('.plan-meta-overlay-outer') as HTMLElement;
+    
+        overlay?.classList.add('show-grid');
+        anime({
+            targets: '.plan-meta-overlay-outer',
+            opacity: {
+                value: [0, 1],
+                duration: globalPrefersReducedMotion.value ? 0 : 100,
+                easing: 'easeOutSine'
+            },
+            scale: {
+                value: [0.9, 1],
+                duration: globalPrefersReducedMotion.value ? 0 : 200,
+                delay: globalPrefersReducedMotion.value ? 0 : 350,
+                easing: 'easeOutSine'
+            },
+        })
+    })
+    
+    const hideSettingsHandler = $(async () => {
+        const overlay = document.querySelector('.plan-meta-overlay-outer');
+        await anime({
+            targets: '.plan-meta-overlay-outer',
+            opacity: {
+                value: [1, 0],
+                duration: globalPrefersReducedMotion.value ? 0 : 100,
+                delay: globalPrefersReducedMotion.value ? 0 : 200
+            },
+            scale: [1, globalPrefersReducedMotion.value ? 1 : 0.9],
+            duration: globalPrefersReducedMotion.value ? 0 : 200,
+            easing: 'easeOutSine',
+        }).finished;
+    
+        setTimeout(() => {
+            overlay?.classList.remove('show-grid');
+        }, 300)
+    })
+    
     const tokens = useTokens();
     detect();
 
@@ -261,6 +266,9 @@ export default component$(() => {
     const liveParam = url.searchParams.get('live');
 
     useVisibleTask$(() => {
+        globalPrefersReducedMotion.value = window.matchMedia(`(prefers-reduced-motion: reduce)`).matches === true;
+        console.log({globalPrefersReducedMotion}, globalPrefersReducedMotion.value)
+
         if (liveParam && liveParam === '1') {
             if (currentPlanData.value.status != 'live') {
                 url.searchParams.delete('live');
@@ -317,19 +325,95 @@ export default component$(() => {
         }) || [];
         return initial; 
     })
+    const runPlanButtonText = useSignal('Run Live');
+
+    const adjustLiveBar = $((action: 'show' | 'hide') => {
+        if (runPlanButtonText.value === 'Run Live') return;
+
+        const findBestMatch = (drills: Partial<DrillRow>[], currentHour: number) => {
+            let bestMatch: Partial<DrillRow> = {};
+            let smallestDifference = Infinity;
+        
+            drills.forEach(obj => {
+                if (obj.hour_start !== null && obj.hour_end !== null) {
+                    if (!obj.hour_start || !obj.hour_end) return;
+                    const startDifference = Math.abs(obj.hour_start - currentHour);
+                    const endDifference = Math.abs(obj.hour_end - currentHour);
+                    const smallestObjDifference = Math.min(startDifference, endDifference);
+                
+                    if (smallestObjDifference < smallestDifference) {
+                        smallestDifference = smallestObjDifference;
+                        bestMatch = obj;
+                    }
+                }
+            });
+            
+            return bestMatch;
+        }
+        const drills = planDrills.value;
+
+        if (!drills) return;
+
+        const liveBarWrap = document.querySelector('.creation-live-bar-wrap');
+
+        if (action === 'hide') {
+            anime({
+                targets: liveBarWrap,
+                translateY: {
+                    value: '0px',
+                    delay: 500,
+                },
+                opacity: 0,
+                easing: 'easeOutSine',
+                duration: 500
+            }) 
+            console.log('hiding')
+            return
+        }
+
+        const parentBounding = document.querySelector(`.creation-grid-wrap`)?.getBoundingClientRect();
+        const padding = 27 + 37;
+        
+        const match = findBestMatch(drills, dayjs().hour());
+
+        if (match.uuid) {
+            const drillBounding = document.querySelector(`.drill-item-outer[uuid="${match.uuid}"`)?.getBoundingClientRect();
+            if (drillBounding && parentBounding) {
+                const offset = drillBounding.top - parentBounding.top;
+
+                anime({
+                    targets: liveBarWrap,
+                    translateY: `${offset - padding}px`,
+                    opacity: 1,
+                    easing: 'easeOutQuint',
+                    duration: 1000
+                }) 
+            }
+            
+        }
+    })
 
     const currentUserEmail = useSignal('')
 
-    const runPlanButtonText = useSignal('Run Live');
     const runPlanHandler = $((e?: any) => {
+
+        const duration = globalPrefersReducedMotion.value ? 0 : 800;
+
         if (runPlanButtonText.value === 'Run Live') {
             anime({
                 targets: '.creation-grid',
-                rowGap: ['20px', '50px'],
+                rowGap: ['20px', '70px'],
                 translateY: ['0px', '40px'],
                 easing: 'easeOutSine',
-                duration: 800
+                duration: duration,
             })
+
+            if (duration != 800) {
+                setTimeout(() => {
+                    adjustLiveBar('show');
+                }, 800)
+            }
+            
 
             if (e) {
                 currentPlanData.value.status = 'live';
@@ -342,11 +426,13 @@ export default component$(() => {
 
         anime({
             targets: '.creation-grid',
-            rowGap: ['50px', '20px'],
+            rowGap: ['70px', '20px'],
             translateY: ['40px', '0px'],
             easing: 'easeOutSine',
-            duration: 800
+            duration: duration
         });
+        adjustLiveBar('hide');
+
 
         if (e) {
             currentPlanData.value.status = null;
@@ -441,6 +527,8 @@ export default component$(() => {
     });
 
     const showOverlayHandler = $((actionString: 'Edit' | 'Create' | 'Copy', drillData?: Partial<DrillRow>) => {
+        const duration = globalPrefersReducedMotion.value ? 0 : 800;
+
         const overlay = document.querySelector('.drill-edit-overlay-outer') as HTMLElement;
         showOverlay.actionString = actionString;
 
@@ -458,29 +546,31 @@ export default component$(() => {
             targets: '.drill-edit-overlay-outer',
             opacity: {
                 value: [0, 1],
-                duration: 100,
+                duration,
                 easing: 'easeOutSine'
             },
             scale: {
-                value: [0.9, 1],
-                duration: 200,
-                delay: 350,
+                value: [globalPrefersReducedMotion.value ? 1 : 0.9, 1],
+                duration,
+                delay: globalPrefersReducedMotion.value ? 0 : 350,
                 easing: 'easeOutSine'
             },
 
         })
     })
     const hideOverlayHandler = $(async () => {
+        const duration = globalPrefersReducedMotion.value ? 0 : 800;
+
         const overlay = document.querySelector('.drill-edit-overlay-outer');
         await anime({
             targets: '.drill-edit-overlay-outer',
             opacity: {
                 value: [1, 0],
-                duration: 100,
-                delay: 200
+                duration,
+                delay: globalPrefersReducedMotion.value ? 0 : 200,
             },
-            scale: [1, 0.9],
-            duration: 200,
+            scale: [1, globalPrefersReducedMotion.value ? 1 : 0.9],
+            duration,
             easing: 'easeOutSine',
         }).finished;
 
@@ -609,6 +699,7 @@ export default component$(() => {
         hideOverlayHandler();
     });
 
+  
     
     const checkDrillTimes = $(() => {
         const drills = planDrills.value;
@@ -618,7 +709,10 @@ export default component$(() => {
         if (drills) {
             if (limitCounter > limit) return;
 
-            drills.forEach(drillData => {
+
+
+
+            drills.forEach((drillData) => {
                 const current = dayjs();
                 const start = dayjs(drillData.time_start, 'hh:mm A');
                 const end = dayjs(drillData.time_end, 'hh:mm A');
@@ -809,6 +903,7 @@ export default component$(() => {
 
         setInterval(() => {
             checkDrillTimes();
+            adjustLiveBar('show');
             liveMetaStore.currentTime = dayjs().format('h:mm:ss A');
         }, 1000)
     })
@@ -892,13 +987,26 @@ export default component$(() => {
                         </div>
                         <div class="creation-label-line-right"></div>
                     </div>
-                    <div class={`creation-grid ${runPlanButtonText.value === 'Stop Live' ? 'live' : ''}`}>
 
-                    {planDrills.value ? planDrills.value.map((drillData: Partial<DrillRow>, index) => {
-                        return <DrillItem data={drillData} editHandler={editDrillHandler} completeHandler={markCompleteHandler} key={drillData.uuid} index={index} />
-                    })  : null}
-                    
+                    <div class="creation-grid-wrap">
+                        <div class={`creation-grid ${runPlanButtonText.value === 'Stop Live' ? 'live' : ''}`}>
+
+                        {planDrills.value ? planDrills.value.map((drillData: Partial<DrillRow>, index) => {
+                            return <DrillItem data={drillData} editHandler={editDrillHandler} completeHandler={markCompleteHandler} key={drillData.uuid} index={index} />
+                        })  : null}
+                        
+                        </div>
+                        <div class="creation-live-bar-wrap">
+                            <div class="creation-live-bar">
+                                <div class="creation-live-bar-left"></div>
+                                <div class="creation-live-bar-text">{liveMetaStore.currentTime}</div>
+                                <div class="creation-live-bar-right"></div>
+                            </div>
+                        </div>
                     </div>
+
+
+                    
                     <div class="creation-add-button" onClick$={() => {
                         showOverlayHandler('Create')
                     }}>Add Drill</div>

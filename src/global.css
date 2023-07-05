@@ -918,7 +918,9 @@ ul.breadcrumb li a:hover {
   height: max-content;
   padding: 0px;
   row-gap: 20px;
+
 }
+
 .creation-live-tools {
   background: #000000;
   border-radius: 10px;
@@ -1058,26 +1060,41 @@ ul.breadcrumb li a:hover {
 .current-live-drill-box {
   position: relative;
 
-  padding: 0px 0px;
-  background: #000000;
+  padding: 8px 12px 10px 12px;
+  background: #121212;
+  border-radius: 10px;
   font-variation-settings: 'wght' 500;
   font-size: 16px;
   transition: color 0.3s ease, background 0.3s ease;
   display: grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: max-content 20px;
+}
+.current-live-drill-box-meta-inner {
+  display: grid;
   grid-auto-flow: column;
-  grid-template-columns: 1fr 80px;
+  grid-template-columns: 1fr max-content;
+  grid-template-rows: max-content max-content;
+  margin: 0px 0px 8px 0px;
 }
 
 .current-live-drill-box .title {
-  margin: auto 0 auto 10px;
+  margin: auto 0 auto 0px;
   z-index: 2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .current-live-drill-box .drill-content-dating {
   margin: auto 0 auto 10px;
+  padding: 0px 5px;
 }
 .current-live-drill-box .drill-dating-range{
-  margin: auto 10px;
+  margin: auto 00px;
   z-index: 2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .progress-inner {
@@ -1086,7 +1103,7 @@ ul.breadcrumb li a:hover {
   grid-template-columns: max-content 1fr;
   position: relative;
 
-  border-radius: 10px;
+  border-radius: 8px;
   border: 2px solid #2f2f2f;
 }
 
@@ -1095,13 +1112,12 @@ ul.breadcrumb li a:hover {
   top: 0;
   bottom: 0;
   left: 0;
-  border-radius: 8px;
+  border-radius: 6px;
 
   width: 0%;
-  background: repeating-linear-gradient(to right, 
-  #454545a1 0px,
-  #1d1d1d 50px
-  );
+  background: #2f2f2f;
+  margin: 1px;
+
   transition: width 0.8s ease-out;
 }
 .live-timeline-drill-label {
@@ -1113,7 +1129,7 @@ ul.breadcrumb li a:hover {
   background: #3d3d3d00;
 }
 .live .live-current-drill-label {
-  color: #666;
+  color: #E5B843;
 }
 .live .current-live-drill-box {
   color: rgb(255, 255, 255);
@@ -1180,12 +1196,69 @@ ul.breadcrumb li a:hover {
   margin: auto 0 auto 15px;
 }
 
+.creation-grid-wrap {
+  display: grid;
+  position: relative;
+  margin: 0px 0px 0px 0px;
+  transition: margin 0.3s ease;
+}
+.creation-grid-wrap:has(.live) {
+  transition: margin 0.3s ease;
+  margin: 0px 0px 0px 0px;
+}
 .creation-grid {
   display: grid;
   grid-auto-flow: row;
   row-gap: 20px;
 
   position: relative;
+}
+
+.creation-live-bar-wrap {
+  pointer-events: none;
+
+  position: absolute;
+  top: 0;
+  left: 0px;
+  right: 0;
+
+  height: auto;
+  display: grid;
+  grid-auto-flow: column;
+  grid-template-columns: 1fr;
+  opacity: 0;
+
+  z-index: 2;
+}
+.live + .creation-live-bar-wrap {
+
+}
+
+.creation-live-bar {
+  display: grid;
+  grid-auto-flow: column;
+  grid-template-columns: 1fr max-content 1fr;
+  margin: auto 0;
+  width: auto;
+  height: auto;
+}
+.creation-live-bar-text {
+  display: grid;
+  margin: auto 10px;
+  width: max-content;
+  font-variation-settings: 'wght' 500;
+  letter-spacing: 1px;
+  color: #E5B843;
+}
+.creation-live-bar-left {
+  margin: auto 0px;
+  background: #E5B843;
+  height: 2px;
+}
+.creation-live-bar-right {
+  margin: auto 0px;
+  background: #E5B843;
+  height: 2px;
 }
 .creation-grid.live {
   margin: 0px 0px 40px 0px;

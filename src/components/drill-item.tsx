@@ -91,20 +91,20 @@ export const CurrentLiveDrillBox = component$((props: CurrentLiveDrillBoxProps) 
 
     return (
         <div class='current-live-drill-box'>
-            <div class="progress-inner">
-            <div class="title">{data.title}</div>
+            <div class="current-live-drill-box-meta-inner">
+                <div class="title">{data.title}</div>
                 <span class="drill-dating-range">{range.start}-{range.end}</span>
+                <div class={`drill-content-dating ${range.display ? 'show' : 'hide'}`}>
+                        {rangePercentage.value ? `${parseFloat(rangePercentage.value).toFixed(0)}%` : '...'}
+                        {/* <span class="drill-dating-duration">{range.duration || ''}</span>
+                        <span class="drill-dating-separator"> | </span>
+                        <span class="drill-dating-range">{range.start}-{range.end}</span> */}
+                </div>
+            </div>
+            <div class="progress-inner">
                 <div class="progress-background" style={{
                     width: `${rangePercentage.value}%`
                 }}></div>
-            </div>
-
-            
-            <div class={`drill-content-dating ${range.display ? 'show' : 'hide'}`}>
-                    {rangePercentage.value ? `${parseFloat(rangePercentage.value).toFixed(0)}%` : '...'}
-                    {/* <span class="drill-dating-duration">{range.duration || ''}</span>
-                    <span class="drill-dating-separator"> | </span>
-                    <span class="drill-dating-range">{range.start}-{range.end}</span> */}
             </div>
         </div>
     )
