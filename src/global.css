@@ -417,7 +417,8 @@ ul.breadcrumb li a:hover {
   color: #000000;
   padding: 8px 14px;
   border-radius: 8px;
-  background: #ffffff;
+  background: #ededed;
+  border: 2px solid #ededed;
   font-size: 14px;
 
   margin: 0;
@@ -425,14 +426,44 @@ ul.breadcrumb li a:hover {
   color: inherit;
   text-decoration: none;
 }
+.plan-run {
+  display: grid;
+}
+.plan-run a {
+  cursor: pointer;
+  color: #ffffff;
+  padding: 8px 14px;
+  border-radius: 8px;
+  background: #252525;
+  border: 2px solid #373737;
+  font-size: 14px;
+
+  margin: 0;
+
+  text-decoration: none;
+  transition: background 0.3s ease, color 0.3s ease, opacity 0.3s ease, border 0.3s ease;
+}
+.plan-run a:focus {
+  background: #252525;
+  border: 2px solid #585858;
+}
+.plan-run a:hover {
+  background: #1b1b1b;
+  border: 2px solid #585858;
+}
 .plan-copy-link {
-  color: white;
+  cursor: pointer;
+  color: #ededed;
   text-decoration: none;
   text-underline-offset: 5px;
+  border: 2px solid #1d1d1d;
+
+  display: grid;
+  text-align: center;
 
   padding: 8px 14px;
   border-radius: 8px;
-  background: #1d1d1d;
+  background: #000000;
 }
 
 .create-plan-wrap {
@@ -688,7 +719,7 @@ ul.breadcrumb li a:hover {
   max-width: calc(100%);
 }
 .author-logo {
-  margin: auto 0 auto 15px;
+  margin: auto 15px auto 15px;
   display: grid;
 }
 .image-logo {
@@ -938,10 +969,11 @@ ul.breadcrumb li a:hover {
 .live-timeline-meta {
   margin: 5px 0 5px 0px;
   display: grid;
-  grid-auto-flow: column;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
   font-variation-settings: 'wght' 600;
   width: auto;
-  grid-template-columns: max-content max-content max-content max-content max-content;
+  
+  gap: 2px;
 
   background: #3d3d3d00;
   color: #3d3d3d;
@@ -949,9 +981,14 @@ ul.breadcrumb li a:hover {
 }
 .live-timeline-meta span {
   transition: color 0.3s ease, background 0.3s ease;
+  margin: 0 0 0 0px;
+  padding: 7px 10px;
+  background: #1d1d1d;
+  font-size: 14px;
 }
 .timeline-current-state {
-  margin: 0 5px 0px 0px;
+  display: none;
+  margin: 0 0px 0px 0px;
   padding: 0 15px;
   color: #9a9a9a;
   background: #1e1e1e;
@@ -966,17 +1003,18 @@ ul.breadcrumb li a:hover {
 }
 .timeline-current-time {
   width: auto;
-  margin: 0 15px 0 5px;
+  margin: 0 0px 0 0px;
   opacity: 1;
   transition: opacity 0.3s ease;
+}
+.timeline-progress-quantity {
 }
 .live-current-drill-grid {
   margin: 5px 0;
   display: grid;
   grid-auto-flow: row;
-  row-gap: 0px;
-  border: 2px solid #2f2f2f;
-  border-radius: 12px;
+  row-gap: 5px;
+  border-radius: 6px;
   overflow: hidden;
 }
 .current-live-drill-box:last-child {
@@ -985,69 +1023,103 @@ ul.breadcrumb li a:hover {
 .current-live-drill-box {
   position: relative;
 
-  padding: 4px 4px;
+  padding: 0px 0px;
   background: #000000;
   font-variation-settings: 'wght' 500;
   font-size: 16px;
-  border-bottom: 2px solid #2f2f2f;
   transition: color 0.3s ease, background 0.3s ease;
   display: grid;
   grid-auto-flow: column;
-  grid-template-columns: 1fr max-content;
+  grid-template-columns: 1fr 80px;
+}
 
-  .title {
-    margin: auto 0 auto 10px;
-  }
+.current-live-drill-box .title {
+  margin: auto 0 auto 10px;
+  z-index: 2;
+}
+.current-live-drill-box .drill-content-dating {
+  margin: auto 0 auto 10px;
+}
+.current-live-drill-box .drill-dating-range{
+  margin: auto 10px;
+  z-index: 2;
+}
 
-  .progress-background {
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    left: 0;
+.progress-inner {
+  display: grid;
+  grid-auto-flow: column;
+  grid-template-columns: max-content 1fr;
+  position: relative;
 
-    width: 0%;
-    background: #4141415b;
-    transition: width 0.8s ease-out;
-  }
+  border-radius: 10px;
+  border: 2px solid #2f2f2f;
+}
+
+.progress-background {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  border-radius: 8px;
+
+  width: 0%;
+  background: repeating-linear-gradient(to right, 
+  #454545a1 0px,
+  #1d1d1d 50px
+  );
+  transition: width 0.8s ease-out;
 }
 .live-timeline-drill-label {
   color: #666;
   display: none;
 }
-.live {
-  .live-current-drill-wrap {
-    background: #3d3d3d00;
-  }
-  .live-current-drill-label {
-    color: #666;
-  }
-  .current-live-drill-box {
-    color: rgb(255, 255, 255);
-  }
-  
-  .live-timeline-meta {
-    background: #3d3d3d00;
-  }
 
-  .timeline-current-time {
-    color: #E5B843;
-    display: block;
-    opacity: 1;
-  }
-  .timeline-current-state {
-    color: #E5B843;
-    background: #4f3700;
-  }
-  .timeline-status.behind {
-    color: #E54343;
-  }
-  .timeline-status.on-time {
-    color: #46F11B;
-  }
-  .timeline-status.ahead {
-    color: #1BF1CA;
-  }
-} 
+.live .live-current-drill-wrap {
+  background: #3d3d3d00;
+}
+.live .live-current-drill-label {
+  color: #666;
+}
+.live .current-live-drill-box {
+  color: rgb(255, 255, 255);
+}
+.live .live-timeline-meta {
+  background: #3d3d3d00;
+}
+.live .timeline-current-time {
+  color: #E5B843;
+  display: block;
+  opacity: 1;
+}
+.live .timeline-current-state {
+  color: #E5B843;
+  background: #4f3700;
+}
+.live .timeline-status.running-behind {
+  color: #E54343;
+}
+.live .timeline-status.on-schedule {
+  color: #46F11B;
+}
+.live .timeline-status.ahead-of-schedule {
+  color: #1BF1CA;
+}
+.live .timeline-live-quantity {
+  color: #E5B843;
+}
+.live .timeline-late-quantity {
+  color: #E54343;
+}
+.live .timeline-complete-quantity {
+  color: #ededed;
+}
+.timeline-quantity.show {
+  display: block;
+}
+.timeline-quantity {
+  display: none;
+}
+
 
 .creation-label {
   color: white;
@@ -1079,6 +1151,9 @@ ul.breadcrumb li a:hover {
   row-gap: 20px;
 
   position: relative;
+}
+.creation-grid.live {
+  margin: 0px 0px 40px 0px;
 }
 .live-bar-wrap {
   position: absolute;
@@ -1120,6 +1195,7 @@ ul.breadcrumb li a:hover {
 
   transition: border-radius 0.3s ease;
 }
+
 .live .drill-item-outer {
   border-radius: 0px 0px 8px 8px;
 }
@@ -1152,8 +1228,8 @@ ul.breadcrumb li a:hover {
 .drill-item-live-flag.completed {
   color: #46F11B;
 }
-.drill-item-live-flag.completed {
-  color: #46F11B;
+.drill-item-live-flag.late {
+  color: #ff7465;
 }
 
 .live .drill-item-live-flag {
@@ -1166,7 +1242,7 @@ ul.breadcrumb li a:hover {
   grid-template-rows: max-content max-content 0px;
   transition: grid-template-rows 0.8s ease-out;
 }
-.live .drill-item-inner {
+.create-plan-wrap .live .drill-item-inner {
   transition-delay: 0s;
   grid-template-rows: max-content max-content 50px;
 }
@@ -1226,6 +1302,7 @@ ul.breadcrumb li a:hover {
   border: 2px solid #1d1d1d;
 
   font-size: 14px;
+  z-index: 2;
 }
 .drill-content-dating.show {
   display: grid;
@@ -1765,10 +1842,9 @@ ul.breadcrumb li a:hover {
 
 /* sandbox */
 .sandbox-wrap {
-  margin: 20px;
+  margin: 0px;
   display: grid;
-  border: 1px solid #666;
-  height: 100vh;
+  height: 100dvh;
 }
 .sandbox-wrap canvas {
   width: 100%;

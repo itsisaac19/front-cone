@@ -2,7 +2,7 @@ import { $, component$, useComputed$, useSignal, useStore, useTask$, useVisibleT
 
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from "~/supabase";
-import { type DocumentHead, routeLoader$, server$ } from "@builder.io/qwik-city";
+import { type DocumentHead, routeLoader$, server$, useLocation } from "@builder.io/qwik-city";
 import { TimeEndPicker, TimeStartPicker } from "~/components/dating";
 import dayjs from "dayjs";
 import relativeTime from 'dayjs/plugin/relativeTime';
@@ -134,7 +134,6 @@ const addPlanToRecovery = async (planData: Partial<PlanRow>) => {
 
 import anime from 'animejs';
 import { Navbar } from "~/components/navbar";
-import { LiveBar } from "~/components/live-bar";
 
 
 const detect = server$(() => {
@@ -143,7 +142,7 @@ const detect = server$(() => {
         if (event == 'SIGNED_IN') {
             
             const session = await supabase.auth.getSession();
-            console.log(session)
+            console.log({session})
             //console.log('Authenticated User:', session?.user)
         }
     })
@@ -259,6 +258,19 @@ export default component$(() => {
         }
     })
 
+    const { url }  = useLocation();
+    const liveParam = url.searchParams.get('live');
+
+    useTask$(() => {
+        if (liveParam && liveParam === '1') {
+            if (currentPlanData.value.status != 'live') {
+                console.log('auto-running live via "live=1" in url.');
+                currentPlanData.value.status = 'live';
+                savePlanHandler();
+            }
+        }
+    })
+
     const realTimeEvent = useStore({} as any);
 
     useTask$(({ track }) => {
@@ -277,7 +289,7 @@ export default component$(() => {
 
         if (userid) {
             const { data, error } = await supabase
-            .from('drills').select().eq('user_id', userid).order('time_start', {
+            .from('drills').select().eq('user_id', userid).order('raw_time_start', {
                 ascending: true
             });
         
@@ -446,14 +458,55 @@ export default component$(() => {
         currentDrills: [] as Partial<DrillRow>[],
     });
 
-    const currentLiveDrills = planDrills.value?.filter(drillData => {
-        const start = dayjs(drillData.time_start, 'hh:mm A');
-        const end = dayjs(drillData.time_end, 'hh:mm A');
-
-        if (dayjs().isAfter(start) && dayjs().isBefore(end)) {
+    const completedDrills = planDrills.value?.filter(drillData => {
+        if (drillData.status === 'COMPLETED') {
             return true;
         }
     }) || []; 
+
+    const lateDrills = planDrills.value?.filter(drillData => {
+        if (drillData.status === 'LATE') {
+            return true;
+        }
+    }) || []; 
+
+    const currentLiveDrills = planDrills.value?.filter(drillData => {
+        if (drillData.status === 'LIVE') {
+            return true;
+        }
+    }) || []; 
+
+    const timelineStatusText = { value: '' };
+
+    if (planDrills.value) {
+        const drills = planDrills.value;
+        let ahead = false;
+
+        const atLeastOneLate = drills.some(drillData => {
+            if (drillData.status === 'LATE') return true;
+
+            if (drillData.status === 'COMPLETED') {
+                const current = dayjs();
+                const end = dayjs(drillData.time_end, 'hh:mm A');
+
+                if (current.isBefore(end)) {
+                    ahead = true;
+                } else {
+                    ahead = false;
+                }
+            }
+        });
+
+        if (atLeastOneLate) {
+            timelineStatusText.value = 'Running Behind';
+        } else {
+            if (ahead) {
+                timelineStatusText.value = 'Ahead of Schedule'
+            } else {
+                timelineStatusText.value = 'On Schedule'
+            }
+        }
+    }
 
     const saveDrillHandler = $(async () => {
         const creationSaveButton = document.querySelector('.creation-save-button');
@@ -475,6 +528,28 @@ export default component$(() => {
             drillData.time_end = (document.querySelector('.drill-time-end input') as HTMLInputElement).value;
         }
 
+        let statusText: 'UPCOMING' | 'LIVE' | 'COMPLETED' | 'LATE';
+
+        const start = dayjs(drillData.time_start, 'hh:mm A');
+        const end = dayjs(drillData.time_end, 'hh:mm A');
+
+        drillData.raw_time_start = start.format('YYYY-MM-DDTHH:mm:ssZ');
+        drillData.raw_time_end = end.format('YYYY-MM-DDTHH:mm:ssZ');
+
+        if (dayjs().isAfter(start)) {
+            if (dayjs().isBefore(end)) {
+                statusText = 'LIVE';
+            } else {
+                statusText = 'LATE';
+            }
+        } else {
+            statusText = 'UPCOMING';
+        }
+
+        if (drillData.status != 'COMPLETED') {
+            drillData.status = statusText;
+        }
+
         drillData.index = getDrillIndex(drillData.uuid)
 
         if (currentDrillData.value.uuid) {
@@ -485,7 +560,51 @@ export default component$(() => {
         }
 
         hideOverlayHandler();
+    });
+
+    
+    const checkDrillTimes = $(() => {
+        const drills = planDrills.value;
+
+        if (drills) {
+            drills.forEach(drillData => {
+                const current = dayjs();
+                const end = dayjs(drillData.time_end, 'hh:mm A');
+
+                if (drillData.status === 'LIVE' && current.isAfter(end)) {
+                    drillData.status = 'LATE';
+                    currentDrillData.value = drillData;
+                    saveDrillHandler();
+                }
+
+            })
+        }
     })
+
+    const markCompleteHandler = $((e: any) => {
+        const drillDataElement = e.target.parentElement.previousElementSibling.querySelector('.drill-edit-data');
+        const drillData = structuredClone(JSON.parse(drillDataElement.innerHTML)) as Partial<DrillRow>;
+
+        const start = dayjs(drillData.time_start, 'hh:mm A');
+        const end = dayjs(drillData.time_end, 'hh:mm A');
+
+        if (drillData.status == 'COMPLETED') {
+            if (dayjs().isAfter(start)) {
+                if (dayjs().isBefore(end)) {
+                    drillData.status = 'LIVE';
+                } else {
+                    drillData.status = 'LATE';
+                }
+            } else {
+                drillData.status = 'UPCOMING';
+            }
+        } else {
+            drillData.status = 'COMPLETED';
+        }
+
+        currentDrillData.value = drillData;
+        saveDrillHandler();
+    }) 
 
     const deleteDrillHandler = $(async (e: any) => {
         const button = e.target as HTMLElement;
@@ -647,7 +766,8 @@ export default component$(() => {
         savePlanHandler();
 
         runPlanButtonText.value = 'Run Live';
-    })
+    });
+
 
     useVisibleTask$(() => {
         if (plan.value?.data.status == 'live') {
@@ -655,6 +775,7 @@ export default component$(() => {
         }
 
         setInterval(() => {
+            checkDrillTimes();
             liveMetaStore.currentTime = dayjs().format('h:mm:ss A');
         }, 1000)
     })
@@ -709,19 +830,25 @@ export default component$(() => {
                             class={`run-plan-button`}
                             onClick$={runPlanHandler}
                             >{runPlanButtonText.value}</button>
-                            <div class="live-current-drill-wrap">
-                                <span class="live-current-drill-label">Current Drill{currentLiveDrills.length > 1 ? 's' : ''}</span>
-                                <span class="live-current-drill-grid">{currentLiveDrills.map((drillData: Partial<DrillRow>) => {
-                                    return <CurrentLiveDrillBox data={drillData} key={drillData.uuid} />
-                                })}</span>
-                            </div>
+
                             <div class="live-timeline-meta">
                                 <span class="live-timeline-drill-label">Timeline</span>
                                 <span class="timeline-current-state">{runPlanButtonText.value === 'Stop Live' ? 'LIVE' : 'STANDBY'}</span>
                                 <span class="timeline-meta-spacer"> | </span>
                                 <span class="timeline-current-time">{liveMetaStore.currentTime}</span>
-                                <span class="timeline-status on-time">On Schedule</span>
+                                <span class={`timeline-status ${timelineStatusText.value.toLowerCase().split(' ').join('-')}`}>{timelineStatusText.value}</span>
+                                <span class={`timeline-live-quantity timeline-quantity ${currentLiveDrills.length > 0 ? 'show' : ''}`}>{currentLiveDrills.length} / {planDrills.value?.length} Live</span>
+                                <span class={`timeline-late-quantity timeline-quantity ${lateDrills.length > 0 ? 'show' : ''}`}>{lateDrills.length} / {planDrills.value?.length} Late</span>
+                                <span class={`timeline-complete-quantity timeline-quantity ${completedDrills.length > 0 ? 'show' : ''}`}>{completedDrills.length} / {planDrills.value?.length} Complete</span>
                             </div>
+
+                            <div class="live-current-drill-wrap">
+                                <span class="live-current-drill-label">Current Live Drill{currentLiveDrills.length > 1 ? 's' : ''}</span>
+                                <span class="live-current-drill-grid">{currentLiveDrills.map((drillData: Partial<DrillRow>) => {
+                                    return <CurrentLiveDrillBox data={drillData} key={drillData.uuid} />
+                                })}</span>
+                            </div>
+
                         </div>
                     </div>
                     <div class="creation-label">
@@ -734,7 +861,7 @@ export default component$(() => {
                     <div class={`creation-grid ${runPlanButtonText.value === 'Stop Live' ? 'live' : ''}`}>
 
                     {planDrills.value ? planDrills.value.map((drillData: Partial<DrillRow>, index) => {
-                        return <DrillItem data={drillData} editHandler={editDrillHandler} key={drillData.uuid} index={index} />
+                        return <DrillItem data={drillData} editHandler={editDrillHandler} completeHandler={markCompleteHandler} key={drillData.uuid} index={index} />
                     })  : null}
                     
                     </div>

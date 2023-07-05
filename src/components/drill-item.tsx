@@ -1,4 +1,4 @@
-import { $, component$, noSerialize, useSignal, useTask$, useVisibleTask$, type QRL } from "@builder.io/qwik";
+import { component$, useSignal, useVisibleTask$, type QRL } from "@builder.io/qwik";
 
 import type { Database } from "~/supabase";
 type DrillRow = Database['public']['Tables']['drills']['Row'];
@@ -57,46 +57,50 @@ interface CurrentLiveDrillBoxProps {
 
 export const CurrentLiveDrillBox = component$((props: CurrentLiveDrillBoxProps) => {
     const { data } = props;
-
     const range = parseRange(data.time_start, data.time_end);
-    const percentageOfRange = useSignal('0');
-    const start = noSerialize(dayjs(data.time_start, 'hh:mm A'));
-    const end = noSerialize(dayjs(data.time_end, 'hh:mm A'))
 
-    const reCheck = $((startUnix: number, endUnix: number) => {
-        const current = dayjs().unix();
-        console.log({current})
-        const offsetEnd = endUnix - startUnix;
-        const offsetCurrent = current - startUnix;
-    
-        const fraction = offsetCurrent / offsetEnd;
-
-        //percentageOfRange.value = (fraction * 100).toFixed(2)
-    })
-
-    useTask$(({track}) => {
-        track(() => data.time_end);
-
-        if (start && end) {
-            reCheck(start.unix(), end.unix());
-        }
-    })
-
+    const rangePercentage = useSignal('')
 
     useVisibleTask$(() => {
-        //setInterval(reCheck, 1000)
+        const getPercentageOfRange = () => {
+            const current = dayjs().unix();
+
+            const start = dayjs(data.time_start, 'hh:mm A').unix();
+            const end = dayjs(data.time_end, 'hh:mm A').unix();
+
+            const offsetEnd = end - start;
+            const offsetCurrent = current - start;
+
+            let fraction = offsetCurrent / offsetEnd;
+
+            if (fraction > 1) {
+                fraction = 1;
+            }
+
+            return (fraction * 100).toFixed(2);
+        }
+
+        setInterval(() => {
+            rangePercentage.value = getPercentageOfRange();
+        }, 1000)
     })
 
     return (
         <div class='current-live-drill-box'>
-            <div class="progress-background" style={{
-                width: `${percentageOfRange.value}%`
-            }}></div>
+            <div class="progress-inner">
             <div class="title">{data.title}</div>
-            <div class={`drill-content-dating ${range.display ? 'show' : 'hide'}`}>
-                <span class="drill-dating-duration">{range.duration || ''}</span>
-                <span class="drill-dating-separator"> | </span>
                 <span class="drill-dating-range">{range.start}-{range.end}</span>
+                <div class="progress-background" style={{
+                    width: `${rangePercentage.value}%`
+                }}></div>
+            </div>
+
+            
+            <div class={`drill-content-dating ${range.display ? 'show' : 'hide'}`}>
+                    {rangePercentage.value ? `${parseFloat(rangePercentage.value).toFixed(0)}%` : '...'}
+                    {/* <span class="drill-dating-duration">{range.duration || ''}</span>
+                    <span class="drill-dating-separator"> | </span>
+                    <span class="drill-dating-range">{range.start}-{range.end}</span> */}
             </div>
         </div>
     )
@@ -107,17 +111,16 @@ export const CurrentLiveDrillBox = component$((props: CurrentLiveDrillBoxProps) 
 interface DrillItemProps {
     editHandler?: QRL<(e: any) => void>,
     viewHandler?: QRL<(e: any) => void>,
+    completeHandler?: QRL<(e: any) => void>,
     data: Partial<DrillRow>,
     index?: number
 }
 
 export const DrillItem = component$<DrillItemProps>((props) => {
-    const { data, editHandler, viewHandler, index } = props;
+    const { data, editHandler, viewHandler, completeHandler, index } = props;
     //console.log('adding drillitem@', {data})
 
-    if (editHandler) {
-        console.log('yes handler')
-    }
+
 
     const customAttributes = {uuid: data.uuid}
 
@@ -128,30 +131,14 @@ export const DrillItem = component$<DrillItemProps>((props) => {
         display: false,
     }
 
-    const timelineText = useSignal<'UPCOMING' | 'LIVE' | 'COMPLETED'>('UPCOMING');
-
-    const checkTimeline = $(() => {
-        const start = dayjs(data.time_start, 'hh:mm A');
-        const end = dayjs(data.time_end, 'hh:mm A');
- 
-        if (dayjs().isAfter(start)) {
-            if (dayjs().isBefore(end)) {
-                return timelineText.value = 'LIVE';
-            } 
-
-            return timelineText.value = 'COMPLETED';
-        }
-
-        return timelineText.value = 'UPCOMING';
-    });
-
-    useTask$(() => {
-        checkTimeline();
-    })
-
-    useVisibleTask$(() => {
-        setInterval(checkTimeline, 1000)
-    })
+    const statusText = data.status as ('UPCOMING' | 'LIVE' | 'COMPLETED' | 'LATE') || 'UPCOMING';
+    const timelineText = useSignal(statusText);
+    
+    if (editHandler) {
+        console.groupCollapsed('rendered editable DrillItem')
+        console.log({statusText}, timelineText.value)
+        console.groupEnd()
+    }
 
     if (data.time_start && data.time_end) {
         const start = dayjs(data.time_start, 'hh:mm A');
@@ -181,10 +168,9 @@ export const DrillItem = component$<DrillItemProps>((props) => {
         range.display = true;
     } 
 
-
     return (
         <div class="drill-item-outer" {...customAttributes}>
-            <div class={`drill-item-live-flag ${timelineText.value.toLowerCase()}`}>{timelineText.value}</div>
+            <div class={`drill-item-live-flag ${statusText.toLowerCase()}`}>{statusText}</div>
             <div class="drill-item-inner">
                 <div class="drill-primary-content">
                     <div class="drill-content-meta">
@@ -213,7 +199,7 @@ export const DrillItem = component$<DrillItemProps>((props) => {
                     </div>
                 </div>
                 <div class="drill-live-content">
-                    <button class={`drill-mark-complete-button`}>{timelineText.value !== 'COMPLETED' ? 'Mark as Complete' : 'Completed'}</button>
+                    {completeHandler ? <button onClick$={completeHandler} class={`drill-mark-complete-button`}>{statusText !== 'COMPLETED' ? 'Mark as Complete' : 'Mark as Incomplete'}</button> : null}
                 </div>
             </div>
         </div>

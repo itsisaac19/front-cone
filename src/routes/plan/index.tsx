@@ -55,12 +55,10 @@ export const useUserPlans = routeLoader$(async (requestEvent) => {
 })
 
 const detect = server$(() => {
-    supabase.auth.onAuthStateChange(async (event, session) => {
-        console.log(event, session?.user)
+    supabase.auth.onAuthStateChange(async (event) => {
         if (event == 'SIGNED_IN') {
             
-            const session = await supabase.auth.getSession();
-            console.log(session)
+            //const session = await supabase.auth.getSession();
             //console.log('Authenticated User:', session?.user)
         }
     })

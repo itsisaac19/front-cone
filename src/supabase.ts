@@ -3,7 +3,7 @@ export type Json =
   | number
   | boolean
   | null
-  | { [key: string]: Json }
+  | { [key: string]: Json | undefined }
   | Json[]
 
 export interface Database {
@@ -16,84 +16,8 @@ export interface Database {
           index: number | null
           other_meta: Json | null
           plan_uuid: string | null
-          status: string | null
-          time_end: string | null
-          time_start: string | null
-          title: string | null
-          updated_at: string | null
-          user_id: string | null
-          uuid: string
-        }
-        Insert: {
-          created_at?: string | null
-          description?: string | null
-          index?: number | null
-          other_meta?: Json | null
-          plan_uuid?: string | null
-          status?: string | null
-          time_end?: string | null
-          time_start?: string | null
-          title?: string | null
-          updated_at?: string | null
-          user_id?: string | null
-          uuid?: string
-        }
-        Update: {
-          created_at?: string | null
-          description?: string | null
-          index?: number | null
-          other_meta?: Json | null
-          plan_uuid?: string | null
-          status?: string | null
-          time_end?: string | null
-          time_start?: string | null
-          title?: string | null
-          updated_at?: string | null
-          user_id?: string | null
-          uuid?: string
-        }
-        Relationships: []
-      }
-      "deleted-plans": {
-        Row: {
-          created_at: string | null
-          description: string | null
-          shared_link: string | null
-          status: string | null
-          title: string | null
-          updated_at: string | null
-          user_id: string | null
-          uuid: string
-        }
-        Insert: {
-          created_at?: string | null
-          description?: string | null
-          shared_link?: string | null
-          status?: string | null
-          title?: string | null
-          updated_at?: string | null
-          user_id?: string | null
-          uuid?: string
-        }
-        Update: {
-          created_at?: string | null
-          description?: string | null
-          shared_link?: string | null
-          status?: string | null
-          title?: string | null
-          updated_at?: string | null
-          user_id?: string | null
-          uuid?: string
-        }
-        Relationships: []
-      }
-      drills: {
-        Row: {
-          created_at: string | null
-          description: string | null
-          index: number | null
-          other_meta: Json | null
-          plan_uuid: string | null
+          raw_time_end: string | null
+          raw_time_start: string | null
           status: string | null
           time_end: string | null
           time_start: string | null
@@ -109,6 +33,8 @@ export interface Database {
           index?: number | null
           other_meta?: Json | null
           plan_uuid?: string | null
+          raw_time_end?: string | null
+          raw_time_start?: string | null
           status?: string | null
           time_end?: string | null
           time_start?: string | null
@@ -124,6 +50,98 @@ export interface Database {
           index?: number | null
           other_meta?: Json | null
           plan_uuid?: string | null
+          raw_time_end?: string | null
+          raw_time_start?: string | null
+          status?: string | null
+          time_end?: string | null
+          time_start?: string | null
+          title?: string | null
+          updated_at?: string | null
+          user_email?: string | null
+          user_id?: string | null
+          uuid?: string
+        }
+        Relationships: []
+      }
+      "deleted-plans": {
+        Row: {
+          created_at: string | null
+          description: string | null
+          shared_link: string | null
+          status: string | null
+          title: string | null
+          updated_at: string | null
+          user_email: string | null
+          user_id: string | null
+          uuid: string
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          shared_link?: string | null
+          status?: string | null
+          title?: string | null
+          updated_at?: string | null
+          user_email?: string | null
+          user_id?: string | null
+          uuid?: string
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          shared_link?: string | null
+          status?: string | null
+          title?: string | null
+          updated_at?: string | null
+          user_email?: string | null
+          user_id?: string | null
+          uuid?: string
+        }
+        Relationships: []
+      }
+      drills: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          index: number | null
+          other_meta: Json | null
+          plan_uuid: string | null
+          raw_time_end: string | null
+          raw_time_start: string | null
+          status: string | null
+          time_end: string | null
+          time_start: string | null
+          title: string | null
+          updated_at: string | null
+          user_email: string | null
+          user_id: string | null
+          uuid: string
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          index?: number | null
+          other_meta?: Json | null
+          plan_uuid?: string | null
+          raw_time_end?: string | null
+          raw_time_start?: string | null
+          status?: string | null
+          time_end?: string | null
+          time_start?: string | null
+          title?: string | null
+          updated_at?: string | null
+          user_email?: string | null
+          user_id?: string | null
+          uuid?: string
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          index?: number | null
+          other_meta?: Json | null
+          plan_uuid?: string | null
+          raw_time_end?: string | null
+          raw_time_start?: string | null
           status?: string | null
           time_end?: string | null
           time_start?: string | null

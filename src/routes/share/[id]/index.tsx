@@ -1,4 +1,4 @@
-import { $, component$, useComputed$, useSignal, useStore, useTask$, useVisibleTask$ } from "@builder.io/qwik";
+import { $, component$, useComputed$, useSignal, useStore, useVisibleTask$ } from "@builder.io/qwik";
 import { createClient } from '@supabase/supabase-js';
 
 import type { Database } from "~/supabase";
@@ -96,7 +96,7 @@ export default component$(() => {
 
         if (planUUID) {
             const { data, error } = await supabase
-            .from('drills').select().eq('plan_uuid', planUUID).order('time_start', {
+            .from('drills').select().eq('plan_uuid', planUUID).order('raw_time_start', {
                 ascending: true
             });
         
@@ -111,6 +111,38 @@ export default component$(() => {
             return []
         }
     });
+
+    const timelineStatusText = { value: '' };
+
+    if (planDrills.value) {
+        const drills = planDrills.value;
+        let ahead = false;
+
+        const atLeastOneLate = drills.some(drillData => {
+            if (drillData.status === 'LATE') return true;
+
+            if (drillData.status === 'COMPLETED') {
+                const current = dayjs();
+                const end = dayjs(drillData.time_end, 'hh:mm A');
+
+                if (current.isBefore(end)) {
+                    ahead = true;
+                } else {
+                    ahead = false;
+                }
+            }
+        });
+
+        if (atLeastOneLate) {
+            timelineStatusText.value = 'Running Behind';
+        } else {
+            if (ahead) {
+                timelineStatusText.value = 'Ahead of Schedule'
+            } else {
+                timelineStatusText.value = 'On Schedule'
+            }
+        }
+    }
 
     const liveMetaStore = useStore({
         status: 'On Schedule',
@@ -134,6 +166,18 @@ export default component$(() => {
         }
     }) || []; 
 
+    const completedDrills = planDrills.value?.filter(drillData => {
+        if (drillData.status === 'COMPLETED') {
+            return true;
+        }
+    }) || []; 
+
+    const lateDrills = planDrills.value?.filter(drillData => {
+        if (drillData.status === 'LATE') {
+            return true;
+        }
+    }) || []; 
+
     const isLive = currentPlanData.value?.status == 'live' ? true : false;
 
     const author = useSignal('')
@@ -141,6 +185,10 @@ export default component$(() => {
 
     const runPlanHandler = $(() => {
         if (currentPlanData.value?.status === 'live') {
+            const already = document.querySelector('.creation-grid')?.classList.contains('live');
+
+            if (already) return;
+
             anime({
                 targets: '.creation-grid',
                 rowGap: ['20px', '50px'],
@@ -253,6 +301,7 @@ export default component$(() => {
     const copyText = useSignal('Copy');
 
     useVisibleTask$(() => {
+        runPlanHandler();
         shareURL.value = `${window.location.host}/share/${plan.value?.data.uuid}`;
     })
 
@@ -359,11 +408,11 @@ export default component$(() => {
                                     </div> 
                                 : null}
                                     <div class="live-timeline-meta">
-                                        <span class="live-timeline-drill-label">Timeline</span>
-                                        <span class="timeline-current-state">{isLive ? 'LIVE' : 'STANDBY'}</span>
-                                        <span class="timeline-meta-spacer"> | </span>
                                         <span class="timeline-current-time">{liveMetaStore.currentTime}</span>
-                                        <span class="timeline-status on-time">On Schedule</span>
+                                        <span class={`timeline-status ${timelineStatusText.value.toLowerCase().split(' ').join('-')}`}>{timelineStatusText.value}</span>
+                                        <span class={`timeline-live-quantity timeline-quantity ${currentLiveDrills.length > 0 ? 'show' : ''}`}>{currentLiveDrills.length} / {planDrills.value?.length} Live</span>
+                                        <span class={`timeline-late-quantity timeline-quantity ${lateDrills.length > 0 ? 'show' : ''}`}>{lateDrills.length} / {planDrills.value?.length} Late</span>
+                                        <span class={`timeline-complete-quantity timeline-quantity ${completedDrills.length > 0 ? 'show' : ''}`}>{completedDrills.length} / {planDrills.value?.length} Complete</span>
                                     </div>
                                 </div>
                             </div>
@@ -374,7 +423,13 @@ export default component$(() => {
                                 </div>
                                 <div class="creation-label-line-right"></div>
                             </div>
-                            <div class={`creation-grid ${isLive ? 'live' : ''}`}>
+                            <div 
+                            class={`creation-grid ${isLive ? 'live' : ''}`}
+                            style={{
+                                rowGap: '50px',
+                                transform: 'translateY(40px)'
+                            }}
+                            >                
                                 {planDrills.value ? planDrills.value.map((drillData: Partial<DrillRow>, index) => {
                                     return <DrillItem data={drillData} key={drillData.uuid} index={index} />
                                 })  : null}
