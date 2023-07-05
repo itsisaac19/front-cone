@@ -527,7 +527,6 @@ export default component$(() => {
     });
 
     const showOverlayHandler = $((actionString: 'Edit' | 'Create' | 'Copy', drillData?: Partial<DrillRow>) => {
-        const duration = globalPrefersReducedMotion.value ? 0 : 800;
 
         const overlay = document.querySelector('.drill-edit-overlay-outer') as HTMLElement;
         showOverlay.actionString = actionString;
@@ -559,7 +558,6 @@ export default component$(() => {
         })
     })
     const hideOverlayHandler = $(async () => {
-        const duration = globalPrefersReducedMotion.value ? 0 : 800;
 
         const overlay = document.querySelector('.drill-edit-overlay-outer');
         await anime({
