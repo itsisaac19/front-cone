@@ -546,12 +546,12 @@ export default component$(() => {
             targets: '.drill-edit-overlay-outer',
             opacity: {
                 value: [0, 1],
-                duration,
+                duration: globalPrefersReducedMotion.value ? 0 : 100,
                 easing: 'easeOutSine'
             },
             scale: {
                 value: [globalPrefersReducedMotion.value ? 1 : 0.9, 1],
-                duration,
+                duration: globalPrefersReducedMotion.value ? 0 : 200,
                 delay: globalPrefersReducedMotion.value ? 0 : 350,
                 easing: 'easeOutSine'
             },
@@ -566,11 +566,11 @@ export default component$(() => {
             targets: '.drill-edit-overlay-outer',
             opacity: {
                 value: [1, 0],
-                duration,
+                duration: globalPrefersReducedMotion.value ? 0 : 100,
                 delay: globalPrefersReducedMotion.value ? 0 : 200,
             },
             scale: [1, globalPrefersReducedMotion.value ? 1 : 0.9],
-            duration,
+            duration: globalPrefersReducedMotion.value ? 0 : 200,
             easing: 'easeOutSine',
         }).finished;
 
