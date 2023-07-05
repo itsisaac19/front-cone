@@ -13,11 +13,11 @@ export interface Database {
         Row: {
           created_at: string | null
           description: string | null
+          hour_end: number | null
+          hour_start: number | null
           index: number | null
           other_meta: Json | null
           plan_uuid: string | null
-          raw_time_end: string | null
-          raw_time_start: string | null
           status: string | null
           time_end: string | null
           time_start: string | null
@@ -30,11 +30,11 @@ export interface Database {
         Insert: {
           created_at?: string | null
           description?: string | null
+          hour_end?: number | null
+          hour_start?: number | null
           index?: number | null
           other_meta?: Json | null
           plan_uuid?: string | null
-          raw_time_end?: string | null
-          raw_time_start?: string | null
           status?: string | null
           time_end?: string | null
           time_start?: string | null
@@ -47,11 +47,11 @@ export interface Database {
         Update: {
           created_at?: string | null
           description?: string | null
+          hour_end?: number | null
+          hour_start?: number | null
           index?: number | null
           other_meta?: Json | null
           plan_uuid?: string | null
-          raw_time_end?: string | null
-          raw_time_start?: string | null
           status?: string | null
           time_end?: string | null
           time_start?: string | null
@@ -103,11 +103,11 @@ export interface Database {
         Row: {
           created_at: string | null
           description: string | null
+          hour_end: number | null
+          hour_start: number | null
           index: number | null
           other_meta: Json | null
           plan_uuid: string | null
-          raw_time_end: string | null
-          raw_time_start: string | null
           status: string | null
           time_end: string | null
           time_start: string | null
@@ -120,11 +120,11 @@ export interface Database {
         Insert: {
           created_at?: string | null
           description?: string | null
+          hour_end?: number | null
+          hour_start?: number | null
           index?: number | null
           other_meta?: Json | null
           plan_uuid?: string | null
-          raw_time_end?: string | null
-          raw_time_start?: string | null
           status?: string | null
           time_end?: string | null
           time_start?: string | null
@@ -137,11 +137,11 @@ export interface Database {
         Update: {
           created_at?: string | null
           description?: string | null
+          hour_end?: number | null
+          hour_start?: number | null
           index?: number | null
           other_meta?: Json | null
           plan_uuid?: string | null
-          raw_time_end?: string | null
-          raw_time_start?: string | null
           status?: string | null
           time_end?: string | null
           time_start?: string | null

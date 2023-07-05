@@ -246,6 +246,41 @@ body:has(.plan-meta-overlay-outer.show-grid) {
 .dashboard-inner {
   display: grid;
 }
+.auth-banner-wrap {
+  margin: 0 0;
+  display: grid;
+  height: 40px;
+  background: #202020;
+  color: #ededed;
+}
+.auth-banner-grid {
+  user-select: none;
+  margin: 0 auto;
+  display: grid;
+  grid-auto-flow: column;
+  column-gap: 5px;
+  grid-template-columns: max-content max-content;
+}
+.auth-banner-grid span {
+  font-size: 14px;
+  font-variation-settings: 'wght' 500;
+}
+.auth-banner-email-label {
+  margin: auto 0 auto 0px;
+}
+.auth-banner-email {
+  margin: auto 0 auto 0px;
+}
+.auth-banner-edit {
+  all: unset;
+  font-size: 14px;
+  font-variation-settings: 'wght' 500;
+
+  cursor: pointer;
+  text-underline-offset: 5px;
+  text-decoration: underline;
+  margin: auto 0 auto 20px;
+}
 .dashboard-top-bar {
   margin: 0 0;
   border-bottom: 1px solid #1d1d1d;
@@ -982,7 +1017,7 @@ ul.breadcrumb li a:hover {
 .live-timeline-meta span {
   transition: color 0.3s ease, background 0.3s ease;
   margin: 0 0 0 0px;
-  padding: 7px 10px;
+  padding: 10px 13px;
   background: #1d1d1d;
   font-size: 14px;
 }

@@ -8,6 +8,7 @@ import dayjs from "dayjs";
 import { md5 } from "./utils";
 import { Navbar } from "~/components/navbar";
 import anime from "animejs";
+import { AuthBanner } from "~/components/auth-banner";
 type PlanRow = Database['public']['Tables']['plans']['Row'];
 type DrillRow = Database['public']['Tables']['drills']['Row'];
 
@@ -18,8 +19,7 @@ const supabase = createClient('https://mockfcvyjtpqnpctspcq.supabase.co', 'eyJhb
 });
 
 const detect = server$(() => {
-    supabase.auth.onAuthStateChange(async (event, session) => {
-        console.log(event, session?.user)
+    supabase.auth.onAuthStateChange(async (event) => {
         if (event == 'SIGNED_IN') {
             
             const session = await supabase.auth.getSession();
@@ -91,12 +91,15 @@ export default component$(() => {
 
     const planDrills = useComputed$(async () => {
         const eventData= realTimeEvent.value;
-        console.log(`Change is MINE: `, {eventData});
+        if (eventData) {
+            console.log(`Change is MINE: `, {eventData});
+        }
+        
         const planUUID = plan.value?.data?.uuid;
 
         if (planUUID) {
             const { data, error } = await supabase
-            .from('drills').select().eq('plan_uuid', planUUID).order('raw_time_start', {
+            .from('drills').select().eq('plan_uuid', planUUID).order('hour_start', {
                 ascending: true
             });
         
@@ -342,6 +345,7 @@ export default component$(() => {
     return (
         <div class="dashboard-outer">
             <div class="dashboard-inner">
+                {plan.value ? <AuthBanner accessString={'Viewing'} planData={currentPlanData.value} currentEmail={currentUserEmail.value} /> : <></>}
                 {plan.value ? <Navbar path={plan.value.path} planData={currentPlanData.value} currentEmail={currentUserEmail.value} /> : <></>}
                 <div class="view-plan-wrap">
                     <div class="meta-actions-outer">

@@ -31,15 +31,19 @@ export const parseRange = (startString?: string | null | undefined, endString?: 
     if (start.hour() >= 12 && end.hour() >= 12) {
         //console.log('both after 12')
         range.end += ' PM';
+    } else if (start.hour() <= 12 && end.hour() <= 12) {
+        range.end += ' AM';
     } else {
         if (start.hour() < 12) {
-            //console.log('start is before');
             range.start += ' AM';
-            range.end += ' PM';
         } else {
-            //console.log('end is before')
             range.start += ' PM';
+        }
+
+        if (end.hour() < 12) {
             range.end += ' AM';
+        } else {
+            range.end += ' PM';
         }
     }
 
@@ -77,7 +81,7 @@ export const CurrentLiveDrillBox = component$((props: CurrentLiveDrillBoxProps) 
                 fraction = 1;
             }
 
-            return (fraction * 100).toFixed(2);
+            return (fraction * 100).toFixed(1);
         }
 
         setInterval(() => {
@@ -132,12 +136,11 @@ export const DrillItem = component$<DrillItemProps>((props) => {
     }
 
     const statusText = data.status as ('UPCOMING' | 'LIVE' | 'COMPLETED' | 'LATE') || 'UPCOMING';
-    const timelineText = useSignal(statusText);
     
     if (editHandler) {
-        console.groupCollapsed('rendered editable DrillItem')
+        /* console.groupCollapsed('rendered editable DrillItem')
         console.log({statusText}, timelineText.value)
-        console.groupEnd()
+        console.groupEnd() */
     }
 
     if (data.time_start && data.time_end) {
@@ -147,17 +150,20 @@ export const DrillItem = component$<DrillItemProps>((props) => {
         range.end = end.format('h:mm');
 
         if (start.hour() >= 12 && end.hour() >= 12) {
-            //console.log('both after 12')
             range.end += ' PM';
+        } else if (start.hour() <= 12 && end.hour() <= 12) {
+            range.end += ' AM';
         } else {
             if (start.hour() < 12) {
-                //console.log('start is before');
                 range.start += ' AM';
-                range.end += ' PM';
             } else {
-                //console.log('end is before')
                 range.start += ' PM';
+            }
+    
+            if (end.hour() < 12) {
                 range.end += ' AM';
+            } else {
+                range.end += ' PM';
             }
         }
 

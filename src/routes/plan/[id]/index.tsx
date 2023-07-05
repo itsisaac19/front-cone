@@ -134,15 +134,15 @@ const addPlanToRecovery = async (planData: Partial<PlanRow>) => {
 
 import anime from 'animejs';
 import { Navbar } from "~/components/navbar";
+import { AuthBanner } from "~/components/auth-banner";
 
 
 const detect = server$(() => {
     supabase.auth.onAuthStateChange(async (event) => {
-        console.log(event)
         if (event == 'SIGNED_IN') {
             
             const session = await supabase.auth.getSession();
-            console.log({session})
+            //console.log({session})
             //console.log('Authenticated User:', session?.user)
         }
     })
@@ -241,7 +241,6 @@ export default component$(() => {
 
 
     const savePlanHandler = $(async (e?: any) => {
-        console.log('ah')
         if (e) {
             (e.target as HTMLElement).classList.add('saving');
         }
@@ -261,12 +260,16 @@ export default component$(() => {
     const { url }  = useLocation();
     const liveParam = url.searchParams.get('live');
 
-    useTask$(() => {
+    useVisibleTask$(() => {
         if (liveParam && liveParam === '1') {
             if (currentPlanData.value.status != 'live') {
+                url.searchParams.delete('live');
+                window.history.replaceState({}, '', url)
+
                 console.log('auto-running live via "live=1" in url.');
                 currentPlanData.value.status = 'live';
                 savePlanHandler();
+
             }
         }
     })
@@ -276,20 +279,23 @@ export default component$(() => {
     useTask$(({ track }) => {
         track(() => realTimeEvent.value);
         const value = realTimeEvent.value;
-        console.log('realtime event', value)
         if (value) {
+            console.log('realtime event', value)
             savePlanHandler();
         }
     })
 
     const userDrills = useComputed$(async () => {
         const eventData= realTimeEvent.value;
-        console.log(`Change is MINE: `, {eventData});
+        if (eventData) {
+            console.log(`Change is MINE: `, {eventData});
+        }
+        
         const userid = plan.value?.data?.user_id;
 
         if (userid) {
             const { data, error } = await supabase
-            .from('drills').select().eq('user_id', userid).order('raw_time_start', {
+            .from('drills').select().eq('user_id', userid).order('hour_start', {
                 ascending: true
             });
         
@@ -313,6 +319,43 @@ export default component$(() => {
     })
 
     const currentUserEmail = useSignal('')
+
+    const runPlanButtonText = useSignal('Run Live');
+    const runPlanHandler = $((e?: any) => {
+        if (runPlanButtonText.value === 'Run Live') {
+            anime({
+                targets: '.creation-grid',
+                rowGap: ['20px', '50px'],
+                translateY: ['0px', '40px'],
+                easing: 'easeOutSine',
+                duration: 800
+            })
+
+            if (e) {
+                currentPlanData.value.status = 'live';
+                console.warn('saving plan from run')
+                savePlanHandler();
+            }
+
+            return runPlanButtonText.value = 'Stop Live';
+        }
+
+        anime({
+            targets: '.creation-grid',
+            rowGap: ['50px', '20px'],
+            translateY: ['40px', '0px'],
+            easing: 'easeOutSine',
+            duration: 800
+        });
+
+        if (e) {
+            currentPlanData.value.status = null;
+            console.warn('saving plan from run')
+            savePlanHandler();
+        }
+
+        runPlanButtonText.value = 'Run Live';
+    });
 
     useVisibleTask$(async () => {
         if (tokens.value?.accessToken && tokens.value?.refreshToken) {
@@ -373,6 +416,10 @@ export default component$(() => {
                     const userid = (payload.new as DrillRow).user_id;
                     console.log('update plan', {userid})
                     if (plan.value?.data.user_id && plan.value.data.user_id == userid) {
+                        if (payload.new.status != currentPlanData.value.status) {
+                            runPlanHandler();
+                        }
+
                         currentPlanData.value = payload.new;
                     } else {
                         console.log(`Change is NOT mine: `, payload.eventType);
@@ -533,8 +580,8 @@ export default component$(() => {
         const start = dayjs(drillData.time_start, 'hh:mm A');
         const end = dayjs(drillData.time_end, 'hh:mm A');
 
-        drillData.raw_time_start = start.format('YYYY-MM-DDTHH:mm:ssZ');
-        drillData.raw_time_end = end.format('YYYY-MM-DDTHH:mm:ssZ');
+        drillData.hour_start = start.hour();
+        drillData.hour_end = end.hour();
 
         if (dayjs().isAfter(start)) {
             if (dayjs().isBefore(end)) {
@@ -565,16 +612,31 @@ export default component$(() => {
     
     const checkDrillTimes = $(() => {
         const drills = planDrills.value;
+        let limitCounter = 0;
+        const limit = 20;
 
         if (drills) {
+            if (limitCounter > limit) return;
+
             drills.forEach(drillData => {
                 const current = dayjs();
+                const start = dayjs(drillData.time_start, 'hh:mm A');
                 const end = dayjs(drillData.time_end, 'hh:mm A');
 
                 if (drillData.status === 'LIVE' && current.isAfter(end)) {
                     drillData.status = 'LATE';
                     currentDrillData.value = drillData;
-                    saveDrillHandler();
+                    limitCounter++;
+                    return saveDrillHandler();
+                }
+
+                if (drillData.status === 'UPCOMING') {
+                    if (current.isAfter(start) && current.isBefore(end)) {
+                        drillData.status = 'LIVE';
+                        currentDrillData.value = drillData;
+                        limitCounter++;
+                        return saveDrillHandler();
+                    }
                 }
 
             })
@@ -737,36 +799,7 @@ export default component$(() => {
     })
 
 
-    const runPlanButtonText = useSignal('Run Live');
-    const runPlanHandler = $(() => {
-        if (runPlanButtonText.value === 'Run Live') {
-            anime({
-                targets: '.creation-grid',
-                rowGap: ['20px', '50px'],
-                translateY: ['0px', '40px'],
-                easing: 'easeOutSine',
-                duration: 800
-            })
 
-            currentPlanData.value.status = 'live';
-            savePlanHandler();
-
-            return runPlanButtonText.value = 'Stop Live';
-        }
-
-        anime({
-            targets: '.creation-grid',
-            rowGap: ['50px', '20px'],
-            translateY: ['40px', '0px'],
-            easing: 'easeOutSine',
-            duration: 800
-        });
-
-        currentPlanData.value.status = null;
-        savePlanHandler();
-
-        runPlanButtonText.value = 'Run Live';
-    });
 
 
     useVisibleTask$(() => {
@@ -782,6 +815,7 @@ export default component$(() => {
 
     return (
     <div>
+        {plan.value ? <AuthBanner accessString={'Editing'} planData={currentPlanData.value} currentEmail={currentUserEmail.value} /> : <></>}
         {plan.value ? <Navbar path={plan.value.path} planData={currentPlanData.value} currentEmail={currentUserEmail.value} /> : <></>}
 
         <div class="create-plan-wrap">
