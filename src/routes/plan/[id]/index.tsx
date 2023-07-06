@@ -189,6 +189,21 @@ const getDrillIndex = (drillUUID?: string) => {
     }
 }
 
+const pushChannel = supabase.channel('push-notifications', {
+    config: {
+        broadcast: {
+            self: true
+        }
+    }
+});
+pushChannel.on('broadcast', { event: 'drill-starting' }, (payload) => {
+    console.groupCollapsed('DRILL-STARTING');
+    console.log({payload});
+    
+
+    console.groupEnd()
+})
+
 export default component$(() => {
     const globalPrefersReducedMotion = useSignal(false);
 
@@ -516,6 +531,7 @@ export default component$(() => {
             window.onbeforeunload = () => {
                 console.log('REMOVING')
                 supabase.removeChannel(channel)
+                supabase.removeChannel(pushChannel)
             }
         } else {
             location.assign('/')
@@ -697,8 +713,6 @@ export default component$(() => {
         hideOverlayHandler();
     });
 
-  
-    
     const checkDrillTimes = $(() => {
         const drills = planDrills.value;
         let limitCounter = 0;
@@ -706,9 +720,6 @@ export default component$(() => {
 
         if (drills) {
             if (limitCounter > limit) return;
-
-
-
 
             drills.forEach((drillData) => {
                 const current = dayjs();
@@ -727,6 +738,20 @@ export default component$(() => {
                         drillData.status = 'LIVE';
                         currentDrillData.value = drillData;
                         limitCounter++;
+
+
+                        pushChannel.subscribe((status) => {
+                            if (status === 'SUBSCRIBED') {
+                                pushChannel.send({
+                                    type: 'broadcast',
+                                    event: 'drill-starting',
+                                    payload: {
+                                        drillData,
+                                    },
+                                })
+                            }
+                        })
+
                         return saveDrillHandler();
                     }
                 }
@@ -969,12 +994,15 @@ export default component$(() => {
                                 <span class={`timeline-complete-quantity timeline-quantity ${completedDrills.length > 0 ? 'show' : ''}`}>{completedDrills.length} / {planDrills.value?.length} Complete</span>
                             </div>
 
+                            {currentLiveDrills.length > 0 ? 
                             <div class="live-current-drill-wrap">
                                 <span class="live-current-drill-label">Current Live Drill{currentLiveDrills.length > 1 ? 's' : ''}</span>
                                 <span class="live-current-drill-grid">{currentLiveDrills.map((drillData: Partial<DrillRow>) => {
                                     return <CurrentLiveDrillBox data={drillData} key={drillData.uuid} />
                                 })}</span>
                             </div>
+                            : null}
+                            
 
                         </div>
                     </div>
