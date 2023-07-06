@@ -189,20 +189,20 @@ const getDrillIndex = (drillUUID?: string) => {
     }
 }
 
-const pushChannel = supabase.channel('push-notifications', {
+/* const pushChannel = supabase.channel('push-notifications', {
     config: {
         broadcast: {
             self: true
         }
     }
-});
-pushChannel.on('broadcast', { event: 'drill-starting' }, (payload) => {
+}); */
+/* pushChannel.on('broadcast', { event: 'drill-starting' }, (payload) => {
     console.groupCollapsed('DRILL-STARTING');
     console.log({payload});
     
 
     console.groupEnd()
-})
+}) */
 
 export default component$(() => {
     const globalPrefersReducedMotion = useSignal(false);
@@ -531,7 +531,7 @@ export default component$(() => {
             window.onbeforeunload = () => {
                 console.log('REMOVING')
                 supabase.removeChannel(channel)
-                supabase.removeChannel(pushChannel)
+                //supabase.removeChannel(pushChannel)
             }
         } else {
             location.assign('/')
@@ -740,7 +740,7 @@ export default component$(() => {
                         limitCounter++;
 
 
-                        pushChannel.subscribe((status) => {
+                        /* pushChannel.subscribe((status) => {
                             if (status === 'SUBSCRIBED') {
                                 pushChannel.send({
                                     type: 'broadcast',
@@ -750,7 +750,7 @@ export default component$(() => {
                                     },
                                 })
                             }
-                        })
+                        }) */
 
                         return saveDrillHandler();
                     }
