@@ -1,12 +1,19 @@
 /** @jsxImportSource react */
 import * as React from 'react';
 import { LocalizationProvider } from '@mui/x-date-pickers';
-import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs'
-
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 
 import { TimePicker } from '@mui/x-date-pickers';
 
-/* const theme = createTheme(
+
+
+import { qwikify$ } from "@builder.io/qwik-react";
+import dayjs from 'dayjs';
+import customParseFormat from 'dayjs/plugin/customParseFormat';
+import { createTheme, ThemeProvider } from '@mui/material';
+dayjs.extend(customParseFormat)
+
+const theme = createTheme(
     {
         palette: {
             mode: 'dark'
@@ -15,13 +22,7 @@ import { TimePicker } from '@mui/x-date-pickers';
             fontFamily: 'inherit'
         }
     },
-); */
-
-
-import { qwikify$ } from "@builder.io/qwik-react";
-import dayjs from 'dayjs';
-import customParseFormat from 'dayjs/plugin/customParseFormat';
-dayjs.extend(customParseFormat)
+);
 
 interface TimePickerProps {
     inputHandler: (value: dayjs.Dayjs | null) => void,
@@ -36,7 +37,7 @@ export const TimeStartPicker = qwikify$<TimePickerProps>((props) => {
     const endTime = props.endTime;
 
     return (
-        <>
+        <ThemeProvider theme={theme}>
             <LocalizationProvider dateAdapter={AdapterDayjs}>
                 <TimePicker  
                 onChange={(pickerValue) => {
@@ -57,7 +58,7 @@ export const TimeStartPicker = qwikify$<TimePickerProps>((props) => {
                 maxTime={dayjs(endTime, 'hh:mm A')}  
                 />
             </LocalizationProvider>
-        </>
+        </ThemeProvider>
     )
 })
 
@@ -67,7 +68,7 @@ export const TimeEndPicker = qwikify$<TimePickerProps>((props) => {
     const startTime = props.startTime;
 
     return (
-        <>
+        <ThemeProvider theme={theme}>
             <LocalizationProvider dateAdapter={AdapterDayjs}>
                 <TimePicker  
                 label="End Time"
@@ -89,6 +90,6 @@ export const TimeEndPicker = qwikify$<TimePickerProps>((props) => {
                 minTime={dayjs(startTime, 'hh:mm A')}  
                 />
             </LocalizationProvider>
-        </>
+        </ThemeProvider>
     )
 })

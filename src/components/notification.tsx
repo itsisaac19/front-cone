@@ -2,9 +2,9 @@
 import * as React from 'react';
 import { qwikify$ } from "@builder.io/qwik-react";
 
-import { Switch } from "@mui/material";
+import { createTheme, ThemeProvider, Switch } from "@mui/material";
 
-/* const theme = createTheme(
+const theme = createTheme(
     {
         palette: {
             mode: 'dark'
@@ -13,17 +13,19 @@ import { Switch } from "@mui/material";
             fontFamily: 'inherit'
         }
     },
-); */
+);
 
 interface NotificationProps {
     pwa: boolean,
+    checkedState: boolean,
+    changeHandler: any
 }
 
 export const NotificationSwitch = qwikify$<NotificationProps>((props) => {
-    const { pwa } = props;
+    const { pwa, checkedState, changeHandler } = props;
     return (
-        <>
-            {pwa ? <Switch  /> : <Switch disabled  />}
-        </>
+        <ThemeProvider theme={theme}>
+            {pwa ? <Switch onChange={changeHandler} checked={checkedState ?? false} key={'pwa-enabled'}  /> : <Switch key={'pwa-disabled'} disabled  />}
+        </ThemeProvider>
     )
 })

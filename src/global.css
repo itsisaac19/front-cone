@@ -928,8 +928,7 @@ ul.breadcrumb li a:hover {
   display: grid;
   height: max-content;
   padding: 0px;
-  row-gap: 20px;
-
+  row-gap: 30px;
 }
 
 .creation-live-tools {
@@ -1657,6 +1656,15 @@ ul.breadcrumb li a:hover {
 .meta-plan-notifications > qwik-react {
   margin: auto 0 auto auto;
 }
+body.requesting {
+  cursor: wait !important;
+}
+body.requesting .meta-plan-notifications > qwik-react {
+  cursor: wait !important;
+}
+body.requesting .meta-plan-notifications > qwik-react > span {
+  pointer-events: none
+}
 .plan-notification-example {
   margin: 10px;
   grid-column: span 2;
@@ -1664,12 +1672,13 @@ ul.breadcrumb li a:hover {
 }
 .example {
   margin: 0;
-  background: url('/notif-example.png');
-  min-height: 60px;
+  background: url('/notif-actual.png');
+  min-height: 70px;
 
   display: grid;
   background-size: contain;
   background-repeat: no-repeat;
+  background-position: left center;
 }
 .example img {
   margin: 0 0;

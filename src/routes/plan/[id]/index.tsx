@@ -3,8 +3,8 @@ import { $, component$, useComputed$, useSignal, useStore, useTask$, useVisibleT
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from "~/supabase";
 import { type DocumentHead, routeLoader$, server$, useLocation, Link } from "@builder.io/qwik-city";
-/* import { TimeEndPicker, TimeStartPicker } from "~/components/dating";
- */import dayjs from "dayjs";
+import { TimeEndPicker, TimeStartPicker } from "~/components/dating";
+import dayjs from "dayjs";
 import relativeTime from 'dayjs/plugin/relativeTime';
 dayjs.extend(relativeTime)
 
@@ -137,8 +137,8 @@ const addPlanToRecovery = async (planData: Partial<PlanRow>) => {
 import anime from 'animejs';
 import { Navbar } from "~/components/navbar";
 import { AuthBanner } from "~/components/auth-banner";
-/* import { NotificationSwitch } from "~/components/notification";
- */
+import { NotificationSwitch } from "~/components/notification";
+
 
 const detect = server$(() => {
     supabase.auth.onAuthStateChange(async (event) => {
@@ -204,9 +204,51 @@ const getDrillIndex = (drillUUID?: string) => {
 
     console.groupEnd()
 }) */
+
+
 export type NotificationPayloadType = {
-    title: string,
-    description: string
+    /**
+     * Upcoming drill notification.
+     */
+    title: 'Drill Upcoming',
+    /**
+     * The drill title.
+     */
+    drillTitle: string
+    /**
+     * The body of an upcoming drill notification. 
+     * Automatic output: [Drill] starts in 5 minutes. Tap to view details.
+     */
+    body: string
+} | {
+    title: 'Drill Starting Now',
+    /**
+     * The drill title.
+     */
+    drillTitle: string
+    /**
+     * The body of an drill starting notification. 
+     * Automatic output: [Drill] is starting now. Tap to view details.
+     */
+    body: string
+} | {
+    title: 'Notification Test',
+    /*
+     * Automatic output: [Drill] is starting now. Tap to view details.
+     */
+    body: 'Notifications have been turned on.'
+}
+
+const generateNotificationPayload = (initialPayload: NotificationPayloadType) => {
+    const finalPayload = { ...initialPayload };
+
+    if (initialPayload.title === 'Drill Starting Now') {
+        finalPayload.body = initialPayload.drillTitle + ' is starting now. Tap to view details.';
+    } else if (initialPayload.title === 'Drill Upcoming') {
+        finalPayload.body = initialPayload.drillTitle + ' starts in 5 minutes. Tap to view details.';
+    } 
+
+    return finalPayload;
 }
 
 export default component$(() => {
@@ -718,6 +760,149 @@ export default component$(() => {
         hideOverlayHandler();
     });
 
+    const sendNotification = $(async (payload: NotificationPayloadType) => {
+        const urlBase64ToUint8Array = (base64String: string) => {
+            const padding = '='.repeat((4 - base64String.length % 4) % 4);
+            const base64 = (base64String + padding)
+            .replace(/-/g, '+')
+            .replace(/_/g, '/');
+    
+            const rawData = window.atob(base64);
+            const outputArray = new Uint8Array(rawData.length);
+        
+            for (let i = 0; i < rawData.length; ++i) {
+                outputArray[i] = rawData.charCodeAt(i);
+            }
+            return outputArray;
+        }
+
+        const delay = 5; // seconds
+        const ttl = 5; // seconds
+
+        //const serverOrigin = import.meta.env.DEV ? `http://localhost:3000` : `http://localhost:3000`;
+        const serverOrigin = `https://front-cone-server.onrender.com`;
+
+        try {
+            const registration = await navigator.serviceWorker.getRegistration('/')
+            if (registration) {
+                const existingSub = await registration.pushManager.getSubscription();
+                let newSub;
+
+                if (!existingSub) {
+                    const response = await fetch(serverOrigin + '/vapidPublicKey');
+                    const vapidPublicKey = await response.text();
+    
+                    console.log({vapidPublicKey});
+    
+                    const convertedVapidKey = urlBase64ToUint8Array(vapidPublicKey);
+
+                    newSub = await registration.pushManager.subscribe({
+                        userVisibleOnly: true,
+                        applicationServerKey: convertedVapidKey
+                    });
+                } else {
+                    newSub = existingSub;
+                }
+
+                console.log({newSub, existingSub})
+
+                const subscriptionRequest = await fetch(serverOrigin + '/register', {
+                    method: 'post',
+                    headers: {
+                        'Content-type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        subscription: newSub
+                    }),
+                });
+
+                const notificationSendRequest = await fetch(serverOrigin + '/sendNotification', {
+                    method: 'post',
+                    headers: {
+                        'Content-type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        subscription: newSub,
+                        payload: JSON.stringify(payload),
+                        delay: delay,
+                        ttl: ttl,
+                    }),
+                });
+
+                console.log({ subscriptionRequest, notificationSendRequest })
+            } else {
+                return 'No service worker registered. Move to a supported environment.';
+            }
+        } catch (error) {
+            return error;
+        }
+
+        return;
+    })
+
+    const notificationCheckedState = useSignal(false);
+
+    const notificationChangeHandler = $(async (e: any) => {
+        const input = e.target as HTMLInputElement;
+        input.classList.remove('requesting');
+
+        notificationCheckedState.value = input.checked;
+
+        if (input.checked === false) {
+            return;
+        }
+
+        document.body.classList.add('requesting');
+
+        const payload = generateNotificationPayload({
+            title: 'Notification Test',
+            body: 'Notifications have been turned on.'
+        })
+
+        const returnToNormalState = () => {
+            return new Promise((resolve) => {
+                setTimeout(() => {
+                    document.body.classList.remove('requesting');
+                    notificationCheckedState.value = false;
+                    resolve(true);
+                }, 800)
+            })
+        }
+
+        let timeoutNormalState = null;
+
+        const testRequest = new Promise((resolve, reject) => {
+            Notification.requestPermission((p) => {
+                console.log({ p })
+            }).then((result) => {
+                if (result === 'granted') {
+                    sendNotification(payload).then((error) => {
+                        if (error) {
+                            reject(error)
+                            timeoutNormalState = returnToNormalState();
+                        }
+                        resolve(result);
+                    });
+                    return 
+                } else if (result === 'denied') {
+                    resolve(result);
+                    timeoutNormalState = returnToNormalState();
+                    return alert('You must allow notifications first. Depending on your browser, you might have to enable them in settings.')
+                } else {
+                    timeoutNormalState = returnToNormalState();
+                    resolve(result);
+                }
+            })
+        })
+
+        const [testResponse, timeout] = await Promise.allSettled([testRequest, timeoutNormalState]);
+        document.body.classList.remove('requesting');
+        if (testResponse.status === 'rejected') {
+            alert(testResponse.reason);
+        }
+        console.log({testResponse, timeout});
+    })
+
     const checkDrillTimes = $(() => {
         const drills = planDrills.value;
         let limitCounter = 0;
@@ -745,17 +930,14 @@ export default component$(() => {
                         limitCounter++;
 
 
-                        /* pushChannel.subscribe((status) => {
-                            if (status === 'SUBSCRIBED') {
-                                pushChannel.send({
-                                    type: 'broadcast',
-                                    event: 'drill-starting',
-                                    payload: {
-                                        drillData,
-                                    },
-                                })
-                            }
-                        }) */
+                        if (notificationCheckedState.value === true) {
+                            const payload = generateNotificationPayload({
+                                title: 'Drill Starting Now',
+                                drillTitle: drillData.title || 'Untitled',
+                                body: ''
+                            })
+                            sendNotification(payload)
+                        }
 
                         return saveDrillHandler();
                     }
@@ -822,7 +1004,7 @@ export default component$(() => {
         }
     })
 
-    /* const pickerStartHandler = $((value: dayjs.Dayjs | null) => {
+    const pickerStartHandler = $((value: dayjs.Dayjs | null) => {
         if (value) {
             const formatted = value.format('hh:mm A')
             console.log('timepicker start value', formatted);
@@ -837,7 +1019,7 @@ export default component$(() => {
 
             currentDrillData.value.time_end = formatted;
         }
-    }) */
+    })
 
     
 
@@ -945,101 +1127,7 @@ export default component$(() => {
         }, 1000)
     });
 
-    const sendNotification = $(async () => {
-        const urlBase64ToUint8Array = (base64String: string) => {
-            const padding = '='.repeat((4 - base64String.length % 4) % 4);
-            const base64 = (base64String + padding)
-            .replace(/-/g, '+')
-            .replace(/_/g, '/');
-    
-            const rawData = window.atob(base64);
-            const outputArray = new Uint8Array(rawData.length);
-        
-            for (let i = 0; i < rawData.length; ++i) {
-                outputArray[i] = rawData.charCodeAt(i);
-            }
-            return outputArray;
-        }
 
-        const payload = 'Break Mark is starting in 5 minutes'
-        const delay = 5; // seconds
-        const ttl = 5; // seconds
-
-        //const serverOrigin = import.meta.env.DEV ? `http://localhost:3000` : `http://localhost:3000`;
-        const serverOrigin = `https://front-cone-server.onrender.com`;
-
-        try {
-            const registration = await navigator.serviceWorker.getRegistration('/')
-            if (registration) {
-                const existingSub = await registration.pushManager.getSubscription();
-                let newSub;
-
-                if (!existingSub) {
-                    const response = await fetch(serverOrigin + '/vapidPublicKey');
-                    const vapidPublicKey = await response.text();
-    
-                    console.log({vapidPublicKey});
-    
-                    const convertedVapidKey = urlBase64ToUint8Array(vapidPublicKey);
-
-                    newSub = await registration.pushManager.subscribe({
-                        userVisibleOnly: true,
-                        applicationServerKey: convertedVapidKey
-                    });
-                } else {
-                    newSub = existingSub;
-                }
-
-                console.log({newSub, existingSub})
-
-                const subscriptionRequest = await fetch(serverOrigin + '/register', {
-                    method: 'post',
-                    headers: {
-                        'Content-type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        subscription: newSub
-                    }),
-                });
-
-                const notificationSendRequest = await fetch(serverOrigin + '/sendNotification', {
-                    method: 'post',
-                    headers: {
-                        'Content-type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        subscription: newSub,
-                        payload: payload,
-                        delay: delay,
-                        ttl: ttl,
-                    }),
-                });
-
-                console.log({ subscriptionRequest, notificationSendRequest })
-            } else {
-                console.log('No service worker registered. Move to a supported environment.')
-            }
-        } catch (error) {
-            alert(error)
-        }
-    })
-
-    const notificationTestHandler = $(async () => {
-        Notification.requestPermission((p) => {
-            console.log({ p })
-        }).then((result) => {
-            if (result === 'granted') {
-                alert('Permission granted.');
-                sendNotification();
-                return 
-            }
-
-            if (result === 'denied') {
-                sendNotification();
-                return alert('You must allow notifications first. Depending on your browser, you might have to enable them in settings.')
-            } 
-        })
-    })
 
     return (
     <div>
@@ -1203,8 +1291,7 @@ export default component$(() => {
                                         <div class="plan-notification-description">Enables push notifications for time sensitive events. </div>
                                     </div>
                                     {/* <input class="notif-switch" onClick$={notificationTestHandler} checked={plan.value?.data ? true : false} type="checkbox" /> */}
-                                    <button onClick$={notificationTestHandler}>TEST</button>
-                                    {/* <NotificationSwitch pwa={isPWA.value} client:load /> */}
+                                    <NotificationSwitch checkedState={notificationCheckedState.value} changeHandler={notificationChangeHandler} pwa={isPWA.value} client:load />
                                     <div class="plan-notification-example">
                                         <div class="example"></div>
                                     </div>
@@ -1252,13 +1339,13 @@ export default component$(() => {
                             class="drill-description-input"  value={currentDrillData.value.description || ''} />
 
                             <div class="drill-dating">
-                                {/* <div class="drill-time-start">
+                                <div class="drill-time-start">
                                     <TimeStartPicker endTime={currentDrillData.value.time_end} inputHandler={pickerStartHandler}
                                     value={currentDrillData.value.time_start} client:load />
                                 </div>
                                 <div class="drill-time-end">
                                     <TimeEndPicker startTime={currentDrillData.value.time_start} inputHandler={pickerEndHandler} value={currentDrillData.value.time_end} client:load />
-                                </div> */}
+                                </div>
                             </div>
 
                             <button class="creation-save-button" onClick$={saveDrillHandler}>{
