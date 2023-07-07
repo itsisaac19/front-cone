@@ -419,6 +419,12 @@ ul.breadcrumb li a:hover {
   font-variation-settings: 'wght' 500;
   padding: 23px;
 }
+.plan-updated-text {
+  color: #666666;
+  margin: 0px 0px 10px 0;
+  font-size: 14px;
+  font-variation-settings: 'wght' 500;
+}
 .plan-item-title {
   color: white;
   font-size: 22px;
@@ -429,7 +435,7 @@ ul.breadcrumb li a:hover {
 }
 .plan-item-description {
   color: #666666;
-  font-size: 14px;
+  font-size: 16px;
   margin: 10px 0 0px 0;
 }
 .plan-secondary-content {
@@ -438,8 +444,10 @@ ul.breadcrumb li a:hover {
   border-top: 1px solid #1d1d1d;
   display: grid;
   grid-auto-flow: column;
-  grid-template-columns: max-content max-content 1fr;
-  column-gap: 20px;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: max-content max-content;
+  column-gap: 10px;
+  row-gap: 10px;
   margin: auto 0 0 0;
   font-size: 14px;
   padding: 16px 20px 16px 20px;
@@ -457,14 +465,16 @@ ul.breadcrumb li a:hover {
   font-size: 14px;
 
   margin: 0;
+  text-align: center;
 
   color: inherit;
   text-decoration: none;
 }
 .plan-run {
+  grid-column: span 2;
   display: grid;
 }
-.plan-run a {
+.plan-run a {  
   cursor: pointer;
   color: #ffffff;
   padding: 8px 14px;
@@ -474,6 +484,7 @@ ul.breadcrumb li a:hover {
   font-size: 14px;
 
   margin: 0;
+  text-align: center;
 
   text-decoration: none;
   transition: background 0.3s ease, color 0.3s ease, opacity 0.3s ease, border 0.3s ease;
@@ -1606,9 +1617,76 @@ ul.breadcrumb li a:hover {
 .plan-title-input:focus, .plan-description-input:focus {
   outline: none;
   border-color: #666666;
-} 
+}
+.meta-plan-switches {
+  display: grid;
+  grid-auto-flow: row;
+  margin: 20px 0;
+}
+.meta-plan-notifications {
+  display: grid;
+  margin: 0px 0;
+  padding: 10px;
+  border-radius: 12px;
+  background: #121212;
+  column-gap: 10px;
+  grid-template-columns: minmax(0, 1fr) max-content;
+  grid-template-rows: max-content max-content;
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.meta-plan-notifications.enable {
+  cursor: initial;
+  opacity: 1;
+}
+.plan-notification-info {
+  margin: 7px auto 8px 10px;
+  display: grid;
+  row-gap: 5px;
+}
+.plan-notification-label {
+  font-size: 18px;
+  font-variation-settings: 'wght' 500;
+}
+.plan-notification-description {
+  color: #666666;
+  font-size: 14px;
+  line-height: 1.3;
+  font-variation-settings: 'wght' 500;
+}
+.meta-plan-notifications > qwik-react {
+  margin: auto 0 auto auto;
+}
+.plan-notification-example {
+  margin: 10px;
+  grid-column: span 2;
+  display: grid;
+}
+.example {
+  margin: 0;
+  background: url('/notif-example.png');
+  min-height: 60px;
 
-
+  display: grid;
+  background-size: contain;
+  background-repeat: no-repeat;
+}
+.example img {
+  margin: 0 0;
+  height: auto;
+  width: 100%;
+}
+.pwa-enabled {
+  margin: 20px 10px 10px 10px;
+  font-variation-settings: 'wght' 500;
+  font-size: 14px;
+  color: #ededed;
+  line-height: 1.4;
+  max-width: 400px;
+}
+.pwa-enabled a {
+  color: #e4c066;
+}
 
 
 .plan-meta-overlay-inner {

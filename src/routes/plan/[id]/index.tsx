@@ -2,9 +2,9 @@ import { $, component$, useComputed$, useSignal, useStore, useTask$, useVisibleT
 
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from "~/supabase";
-import { type DocumentHead, routeLoader$, server$, useLocation } from "@builder.io/qwik-city";
-import { TimeEndPicker, TimeStartPicker } from "~/components/dating";
-import dayjs from "dayjs";
+import { type DocumentHead, routeLoader$, server$, useLocation, Link } from "@builder.io/qwik-city";
+/* import { TimeEndPicker, TimeStartPicker } from "~/components/dating";
+ */import dayjs from "dayjs";
 import relativeTime from 'dayjs/plugin/relativeTime';
 dayjs.extend(relativeTime)
 
@@ -137,7 +137,8 @@ const addPlanToRecovery = async (planData: Partial<PlanRow>) => {
 import anime from 'animejs';
 import { Navbar } from "~/components/navbar";
 import { AuthBanner } from "~/components/auth-banner";
-
+/* import { NotificationSwitch } from "~/components/notification";
+ */
 
 const detect = server$(() => {
     supabase.auth.onAuthStateChange(async (event) => {
@@ -203,6 +204,10 @@ const getDrillIndex = (drillUUID?: string) => {
 
     console.groupEnd()
 }) */
+export type NotificationPayloadType = {
+    title: string,
+    description: string
+}
 
 export default component$(() => {
     const globalPrefersReducedMotion = useSignal(false);
@@ -817,7 +822,7 @@ export default component$(() => {
         }
     })
 
-    const pickerStartHandler = $((value: dayjs.Dayjs | null) => {
+    /* const pickerStartHandler = $((value: dayjs.Dayjs | null) => {
         if (value) {
             const formatted = value.format('hh:mm A')
             console.log('timepicker start value', formatted);
@@ -832,7 +837,7 @@ export default component$(() => {
 
             currentDrillData.value.time_end = formatted;
         }
-    })
+    }) */
 
     
 
@@ -917,9 +922,18 @@ export default component$(() => {
 
 
 
-
+    const isPWA = useSignal(false);
 
     useVisibleTask$(() => {
+        let displayMode = 'browser tab';
+        if (window.matchMedia('(display-mode: standalone)').matches) {
+            displayMode = 'standalone';
+            isPWA.value = true;
+        }
+        // Log launch display mode to analytics
+        console.log('DISPLAY_MODE_LAUNCH:', displayMode);
+
+
         if (plan.value?.data.status == 'live') {
             runPlanHandler();
         }
@@ -929,6 +943,100 @@ export default component$(() => {
             adjustLiveBar('show');
             liveMetaStore.currentTime = dayjs().format('h:mm:ss A');
         }, 1000)
+    });
+
+    const sendNotification = $(async () => {
+        const urlBase64ToUint8Array = (base64String: string) => {
+            const padding = '='.repeat((4 - base64String.length % 4) % 4);
+            const base64 = (base64String + padding)
+            .replace(/-/g, '+')
+            .replace(/_/g, '/');
+    
+            const rawData = window.atob(base64);
+            const outputArray = new Uint8Array(rawData.length);
+        
+            for (let i = 0; i < rawData.length; ++i) {
+                outputArray[i] = rawData.charCodeAt(i);
+            }
+            return outputArray;
+        }
+
+        const payload = 'Break Mark is starting in 5 minutes'
+        const delay = 5; // seconds
+        const ttl = 5; // seconds
+
+        try {
+            const registration = await navigator.serviceWorker.getRegistration('/')
+            if (registration) {
+                let subscription = await registration.pushManager.getSubscription();
+
+                if (subscription || !subscription) { // Eventually store subscription on server
+                    const response = await fetch('/api/vapidPublicKey');
+                    const vapidPublicKey = await response.text();
+
+                    console.log({vapidPublicKey});
+
+                    const convertedVapidKey = urlBase64ToUint8Array(vapidPublicKey);
+
+                    subscription = await registration.pushManager.subscribe({
+                        userVisibleOnly: true,
+                        applicationServerKey: convertedVapidKey
+                    });
+
+                    const permission = await registration.pushManager.permissionState({
+                        userVisibleOnly: true,
+                        applicationServerKey: convertedVapidKey
+                    });
+                    console.log(`permisson: ${permission}`);
+                }
+
+                const subscriptionRequest = await fetch('/api/register', {
+                    method: 'post',
+                    headers: {
+                        'Content-type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        subscription: subscription
+                    }),
+                });
+
+                const notificationSendRequest = await fetch('/api/sendNotification', {
+                    method: 'post',
+                    headers: {
+                        'Content-type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        subscription: subscription,
+                        payload: payload,
+                        delay: delay,
+                        ttl: ttl,
+                    }),
+                });
+
+                console.log({ subscriptionRequest, notificationSendRequest })
+            } else {
+                console.log('No service worker registered. Move to a supported environment.')
+            }
+        } catch (error) {
+            alert(error)
+        }
+    })
+
+    const notificationTestHandler = $(async () => {
+        Notification.requestPermission((p) => {
+            console.log({ p })
+        }).then((result) => {
+            if (result === 'granted') {
+                alert('Permission granted.');
+                sendNotification();
+                return 
+            }
+
+            if (result === 'denied') {
+                sendNotification();
+                return alert('You must allow notifications first. Depending on your browser, you might have to enable them in settings.')
+            } 
+        })
     })
 
     return (
@@ -952,7 +1060,7 @@ export default component$(() => {
                     <div class="plan-title">{currentPlanData.value.title || 'Untitled'}</div>
                     <div class="plan-description">{currentPlanData.value.description || 'No description'}</div>
                     <div class="action-button-grid">
-                        <button class="plan-settings-button" onClick$={showSettingsHandler}>Settings</button>
+                        <button class="plan-settings-button" onClick$={showSettingsHandler}>Edit Plan</button>
                         <div class="plan-share-wrap">
                             <button class="plan-share-button" onClick$={sharePlanHandler}>
                             <span class="plan-share-text">Share Plan</span>
@@ -1086,6 +1194,23 @@ export default component$(() => {
                                 value={currentPlanData.value.description || ''}
                             />
 
+                            <div class="meta-plan-switches">
+                                <div class={`meta-plan-notifications ${isPWA.value ? 'enable' : 'disable'}`}>
+                                    <div class="plan-notification-info">
+                                        <div class="plan-notification-label">Notifications</div>
+                                        <div class="plan-notification-description">Enables push notifications for time sensitive events. </div>
+                                    </div>
+                                    {/* <input class="notif-switch" onClick$={notificationTestHandler} checked={plan.value?.data ? true : false} type="checkbox" /> */}
+                                    <button onClick$={notificationTestHandler}>TEST</button>
+                                    {/* <NotificationSwitch pwa={isPWA.value} client:load /> */}
+                                    <div class="plan-notification-example">
+                                        <div class="example"></div>
+                                    </div>
+                                </div>
+                                {isPWA.value ? <></> : <span class="pwa-enabled">Notifications are only available if you have added Front Cone to your device. Learn more about <Link href="/learn">Notifications</Link>.</span>}
+                            </div>
+
+
                             <button class="plan-save-button" onClick$={savePlanHandler}>Save Info</button>
                         </div>
                     </div>
@@ -1125,13 +1250,13 @@ export default component$(() => {
                             class="drill-description-input"  value={currentDrillData.value.description || ''} />
 
                             <div class="drill-dating">
-                                <div class="drill-time-start">
+                                {/* <div class="drill-time-start">
                                     <TimeStartPicker endTime={currentDrillData.value.time_end} inputHandler={pickerStartHandler}
                                     value={currentDrillData.value.time_start} client:load />
                                 </div>
                                 <div class="drill-time-end">
                                     <TimeEndPicker startTime={currentDrillData.value.time_start} inputHandler={pickerEndHandler} value={currentDrillData.value.time_end} client:load />
-                                </div>
+                                </div> */}
                             </div>
 
                             <button class="creation-save-button" onClick$={saveDrillHandler}>{

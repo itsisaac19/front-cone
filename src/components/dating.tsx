@@ -3,10 +3,10 @@ import * as React from 'react';
 import { LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs'
 
-import { createTheme, ThemeProvider } from '@mui/material/styles';
+
 import { TimePicker } from '@mui/x-date-pickers';
 
-const theme = createTheme(
+/* const theme = createTheme(
     {
         palette: {
             mode: 'dark'
@@ -15,7 +15,7 @@ const theme = createTheme(
             fontFamily: 'inherit'
         }
     },
-);
+); */
 
 
 import { qwikify$ } from "@builder.io/qwik-react";
@@ -36,7 +36,7 @@ export const TimeStartPicker = qwikify$<TimePickerProps>((props) => {
     const endTime = props.endTime;
 
     return (
-        <ThemeProvider theme={theme}>
+        <>
             <LocalizationProvider dateAdapter={AdapterDayjs}>
                 <TimePicker  
                 onChange={(pickerValue) => {
@@ -57,7 +57,7 @@ export const TimeStartPicker = qwikify$<TimePickerProps>((props) => {
                 maxTime={dayjs(endTime, 'hh:mm A')}  
                 />
             </LocalizationProvider>
-        </ThemeProvider>
+        </>
     )
 })
 
@@ -67,7 +67,7 @@ export const TimeEndPicker = qwikify$<TimePickerProps>((props) => {
     const startTime = props.startTime;
 
     return (
-        <ThemeProvider theme={theme}>
+        <>
             <LocalizationProvider dateAdapter={AdapterDayjs}>
                 <TimePicker  
                 label="End Time"
@@ -89,6 +89,6 @@ export const TimeEndPicker = qwikify$<TimePickerProps>((props) => {
                 minTime={dayjs(startTime, 'hh:mm A')}  
                 />
             </LocalizationProvider>
-        </ThemeProvider>
+        </>
     )
 })
