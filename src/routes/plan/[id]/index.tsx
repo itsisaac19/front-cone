@@ -966,37 +966,28 @@ export default component$(() => {
         const ttl = 5; // seconds
 
         //const serverOrigin = import.meta.env.DEV ? `http://localhost:3000` : `http://localhost:3000`;
-        const serverOrigin = `/api`;
+        const serverOrigin = `https://front-cone-server.onrender.com`;
 
         try {
             const registration = await navigator.serviceWorker.getRegistration('/')
             if (registration) {
                 const existingSub = await registration.pushManager.getSubscription();
+                let newSub;
 
-                if (existingSub) {
-                    await existingSub.unsubscribe();
-                }
+                if (!existingSub) {
+                    const response = await fetch(serverOrigin + '/vapidPublicKey');
+                    const vapidPublicKey = await response.text();
+    
+                    console.log({vapidPublicKey});
+    
+                    const convertedVapidKey = urlBase64ToUint8Array(vapidPublicKey);
 
-                const response = await fetch(serverOrigin + '/vapidPublicKey');
-                const vapidPublicKey = await response.text();
-
-                console.log({vapidPublicKey});
-
-                const convertedVapidKey = urlBase64ToUint8Array(vapidPublicKey);
-
-                const newSub = await registration.pushManager.subscribe({
-                    userVisibleOnly: true,
-                    applicationServerKey: convertedVapidKey
-                });
-
-                if (existingSub || !existingSub) { // Eventually store subscription on server
-
-
-/*                     const permission = await registration.pushManager.permissionState({
+                    newSub = await registration.pushManager.subscribe({
                         userVisibleOnly: true,
                         applicationServerKey: convertedVapidKey
                     });
-                    console.log(`permisson: ${permission}`); */
+                } else {
+                    newSub = existingSub;
                 }
 
                 console.log({newSub, existingSub})
