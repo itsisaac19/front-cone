@@ -35,6 +35,7 @@ export const onPost: RequestHandler = async (requestEvent) => {
     console.log({ endpoint })
 
     if (endpoint === 'register') {
+        requestEvent.status(100);
         // Store subscription information
         const data = await requestEvent.parseBody();
         console.log('register', { data })
@@ -43,6 +44,7 @@ export const onPost: RequestHandler = async (requestEvent) => {
     }
 
     if (endpoint === 'sendNotification') {
+        requestEvent.status(100);
         const body: any = await requestEvent.parseBody();
 
         const subscription = body.subscription;
