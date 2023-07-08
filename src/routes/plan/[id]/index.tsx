@@ -1421,15 +1421,13 @@ export default component$(() => {
                             class="drill-description-input"  value={currentDrillData.value.description || ''} />
 
                             <div class="drill-dating">
-                                {import.meta.env.DEV ? <>
-                                    <div class="drill-time-start">
-                                        <TimeStartPicker endTime={currentDrillData.value.time_end} inputHandler={pickerStartHandler}
-                                        value={currentDrillData.value.time_start} client:load />
-                                    </div>
-                                    <div class="drill-time-end">
-                                        <TimeEndPicker startTime={currentDrillData.value.time_start} inputHandler={pickerEndHandler} value={currentDrillData.value.time_end} client:load />
-                                    </div> 
-                                </> : null}
+                                <div class="drill-time-start">
+                                    <TimeStartPicker endTime={currentDrillData.value.time_end} inputHandler={pickerStartHandler}
+                                    value={currentDrillData.value.time_start} client:load />
+                                </div>
+                                <div class="drill-time-end">
+                                    <TimeEndPicker startTime={currentDrillData.value.time_start} inputHandler={pickerEndHandler} value={currentDrillData.value.time_end} client:load />
+                                </div> 
                             </div>
 
                             <button class="creation-save-button" onClick$={saveDrillHandler}>{
