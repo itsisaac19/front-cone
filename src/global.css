@@ -1056,14 +1056,7 @@ ul.breadcrumb li a:hover {
 }
 .timeline-progress-quantity {
 }
-.live-current-drill-grid {
-  margin: 5px 0;
-  display: grid;
-  grid-auto-flow: row;
-  row-gap: 5px;
-  border-radius: 6px;
-  overflow: hidden;
-}
+
 .current-live-drill-box:last-child {
   border-bottom: none;
 }
@@ -1147,10 +1140,62 @@ ul.breadcrumb li a:hover {
   letter-spacing: 1px;
   text-transform: uppercase;
   font-size: 14px;
-  border-bottom: 2px solid #1D1D1D;
+  border-bottom: 0px solid #1D1D1D;
+
+  display: grid;
+  grid-auto-flow: column;
+  grid-template-columns: max-content max-content 1fr;
+}
+.live-current-drill-label span {
+  margin: auto auto auto 5px;
+}
+.current-live-drill-count {
+  margin: 0 0 0 15px;
+  border: 2px solid #1d1d1d;
+  border-radius: 8px;
+
+  font-size: 14px;
+
+  height: 28px;
+  width: 28px;
+
+  display: grid;
+  place-items: center;
+}
+.live-current-drill-label svg {
+  cursor: pointer;
+  margin: 0 0px 0 auto;
+  display: grid;
+  place-items: center;
+  padding: 3px;
+  border-radius: 8px;
+  background: #1d1d1d;
+
+  transition: transform 0.3s ease;
+}
+.live-current-drill-label.expand svg { 
+  transform: rotateX(180deg);
 }
 .live  .live-current-drill-label {
   color: #ededed;
+}
+.expand.live-current-drill-label {
+  border-bottom: 2px solid #1D1D1D;
+}
+.live-current-drill-grid {
+  display: grid;
+  grid-auto-flow: row;
+  row-gap: 5px;
+  border-radius: 6px;
+  overflow: hidden;
+  
+  height: 0;
+  margin: 0;
+  transition: height 0.3s ease, margin 0.3s ease;
+}
+.expand + .live-current-drill-grid {
+  height: auto;
+  margin: 5px 0;
 }
 .live .current-live-drill-box {
   color: rgb(255, 255, 255);
@@ -1341,7 +1386,7 @@ ul.breadcrumb li a:hover {
   border-bottom: none;
   font-variation-settings: 'wght' 500;
   font-size: 14px;
-  letter-spacing: 1px;
+  letter-spacing: 2px;
   z-index: -1;
 
   transition: translate 0.8s ease-out;
@@ -1897,7 +1942,7 @@ body.requesting .meta-plan-notifications > qwik-react > span {
   border: 2px solid #414141;
   background: none;
   border-radius: 8px;
-  height: 60px;
+
   resize: none;
   width: auto;
   font-size: 16px;

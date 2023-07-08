@@ -239,7 +239,7 @@ export type NotificationPayloadType = {
     body: 'Notifications have been turned on.'
 }
 
-const generateNotificationPayload = (initialPayload: NotificationPayloadType) => {
+export const generateNotificationPayload = (initialPayload: NotificationPayloadType) => {
     const finalPayload = { ...initialPayload };
 
     if (initialPayload.title === 'Drill Starting Now') {
@@ -327,8 +327,21 @@ export default component$(() => {
     const { url }  = useLocation();
     const liveParam = url.searchParams.get('live');
 
+
+
     useVisibleTask$(() => {
-        globalPrefersReducedMotion.value = window.matchMedia(`(prefers-reduced-motion: reduce)`).matches === true;
+        const getReducedMotion = () => {
+            const media = window.matchMedia(`(prefers-reduced-motion: reduce)`).matches === true;
+            const mobile = () => {
+                let check = false;
+                (function(a){if(/(android|bb\d+|meego).+mobile|avantgo|bada\/|blackberry|blazer|compal|elaine|fennec|hiptop|iemobile|ip(hone|od)|iris|kindle|lge |maemo|midp|mmp|mobile.+firefox|netfront|opera m(ob|in)i|palm( os)?|phone|p(ixi|re)\/|plucker|pocket|psp|series(4|6)0|symbian|treo|up\.(browser|link)|vodafone|wap|windows ce|xda|xiino/i.test(a)||/1207|6310|6590|3gso|4thp|50[1-6]i|770s|802s|a wa|abac|ac(er|oo|s-)|ai(ko|rn)|al(av|ca|co)|amoi|an(ex|ny|yw)|aptu|ar(ch|go)|as(te|us)|attw|au(di|-m|r |s )|avan|be(ck|ll|nq)|bi(lb|rd)|bl(ac|az)|br(e|v)w|bumb|bw-(n|u)|c55\/|capi|ccwa|cdm-|cell|chtm|cldc|cmd-|co(mp|nd)|craw|da(it|ll|ng)|dbte|dc-s|devi|dica|dmob|do(c|p)o|ds(12|-d)|el(49|ai)|em(l2|ul)|er(ic|k0)|esl8|ez([4-7]0|os|wa|ze)|fetc|fly(-|_)|g1 u|g560|gene|gf-5|g-mo|go(\.w|od)|gr(ad|un)|haie|hcit|hd-(m|p|t)|hei-|hi(pt|ta)|hp( i|ip)|hs-c|ht(c(-| |_|a|g|p|s|t)|tp)|hu(aw|tc)|i-(20|go|ma)|i230|iac( |-|\/)|ibro|idea|ig01|ikom|im1k|inno|ipaq|iris|ja(t|v)a|jbro|jemu|jigs|kddi|keji|kgt( |\/)|klon|kpt |kwc-|kyo(c|k)|le(no|xi)|lg( g|\/(k|l|u)|50|54|-[a-w])|libw|lynx|m1-w|m3ga|m50\/|ma(te|ui|xo)|mc(01|21|ca)|m-cr|me(rc|ri)|mi(o8|oa|ts)|mmef|mo(01|02|bi|de|do|t(-| |o|v)|zz)|mt(50|p1|v )|mwbp|mywa|n10[0-2]|n20[2-3]|n30(0|2)|n50(0|2|5)|n7(0(0|1)|10)|ne((c|m)-|on|tf|wf|wg|wt)|nok(6|i)|nzph|o2im|op(ti|wv)|oran|owg1|p800|pan(a|d|t)|pdxg|pg(13|-([1-8]|c))|phil|pire|pl(ay|uc)|pn-2|po(ck|rt|se)|prox|psio|pt-g|qa-a|qc(07|12|21|32|60|-[2-7]|i-)|qtek|r380|r600|raks|rim9|ro(ve|zo)|s55\/|sa(ge|ma|mm|ms|ny|va)|sc(01|h-|oo|p-)|sdk\/|se(c(-|0|1)|47|mc|nd|ri)|sgh-|shar|sie(-|m)|sk-0|sl(45|id)|sm(al|ar|b3|it|t5)|so(ft|ny)|sp(01|h-|v-|v )|sy(01|mb)|t2(18|50)|t6(00|10|18)|ta(gt|lk)|tcl-|tdg-|tel(i|m)|tim-|t-mo|to(pl|sh)|ts(70|m-|m3|m5)|tx-9|up(\.b|g1|si)|utst|v400|v750|veri|vi(rg|te)|vk(40|5[0-3]|-v)|vm40|voda|vulc|vx(52|53|60|61|70|80|81|83|85|98)|w3c(-| )|webc|whit|wi(g |nc|nw)|wmlb|wonu|x700|yas-|your|zeto|zte-/i.test(a.substr(0,4))) check = true;})(navigator.userAgent||navigator.vendor);
+                return check;
+            }
+
+            return (media || mobile())
+        }
+
+        globalPrefersReducedMotion.value = getReducedMotion();
         console.log({globalPrefersReducedMotion}, globalPrefersReducedMotion.value)
 
         if (liveParam && liveParam === '1') {
@@ -392,17 +405,25 @@ export default component$(() => {
     const adjustLiveBar = $((action: 'show' | 'hide') => {
         if (runPlanButtonText.value === 'Run Live') return;
 
-        const findBestMatch = (drills: Partial<DrillRow>[], currentHour: number) => {
+        const findBestMatch = (drills: Partial<DrillRow>[]) => {
             let bestMatch: Partial<DrillRow> = {};
             let smallestDifference = Infinity;
+
+            let smallest: 'start' | 'end' | undefined;
         
             drills.forEach(obj => {
                 if (obj.hour_start !== null && obj.hour_end !== null) {
                     if (!obj.hour_start || !obj.hour_end) return;
-                    const startDifference = Math.abs(obj.hour_start - currentHour);
-                    const endDifference = Math.abs(obj.hour_end - currentHour);
+                    const startDifference = Math.abs(dayjs(obj.time_start, 'h:mm A').diff(dayjs()));
+                    const endDifference = Math.abs(dayjs(obj.time_end, 'h:mm A').diff(dayjs()));
                     const smallestObjDifference = Math.min(startDifference, endDifference);
-                
+
+                    if (endDifference < startDifference) {
+                        smallest = 'end'
+                    } else {
+                        smallest = 'start'
+                    }
+
                     if (smallestObjDifference < smallestDifference) {
                         smallestDifference = smallestObjDifference;
                         bestMatch = obj;
@@ -410,7 +431,11 @@ export default component$(() => {
                 }
             });
             
-            return bestMatch;
+
+            return {
+                bestMatch,
+                smallest 
+            };
         }
         const drills = planDrills.value;
 
@@ -434,14 +459,19 @@ export default component$(() => {
         }
 
         const parentBounding = document.querySelector(`.creation-grid-wrap`)?.getBoundingClientRect();
-        const padding = 27 + 37;
         
-        const match = findBestMatch(drills, dayjs().hour());
+        const { bestMatch: match, smallest } = findBestMatch(drills);
 
         if (match.uuid) {
             const drillBounding = document.querySelector(`.drill-item-outer[uuid="${match.uuid}"`)?.getBoundingClientRect();
             if (drillBounding && parentBounding) {
-                const offset = drillBounding.top - parentBounding.top;
+                let offset = drillBounding.top - parentBounding.top;
+                let padding = 27 + 37;
+
+                if (smallest === 'end') {
+                    offset = drillBounding.bottom - parentBounding.top;
+                    padding = -10;
+                }
 
                 anime({
                     targets: liveBarWrap,
@@ -604,6 +634,15 @@ export default component$(() => {
         }
 
         overlay?.classList.add('show-grid');
+
+        const input = (document.querySelector('.drill-description-input') as HTMLTextAreaElement);
+
+        setTimeout(() => {
+            input.style.height = '0px';
+            console.log('setting', input.scrollHeight)
+            input.style.height = input.scrollHeight + 'px';
+        }, 100)
+
         anime({
             targets: '.drill-edit-overlay-outer',
             opacity: {
@@ -616,8 +655,7 @@ export default component$(() => {
                 duration: globalPrefersReducedMotion.value ? 0 : 200,
                 delay: globalPrefersReducedMotion.value ? 0 : 350,
                 easing: 'easeOutSine'
-            },
-
+            }
         })
     })
     const hideOverlayHandler = $(async () => {
@@ -675,7 +713,6 @@ export default component$(() => {
     }) || []; 
 
     const timelineStatusText = { value: '' };
-
     if (planDrills.value) {
         const drills = planDrills.value;
         let ahead = false;
@@ -704,7 +741,9 @@ export default component$(() => {
                 timelineStatusText.value = 'On Schedule'
             }
         }
+
     }
+
 
     const saveDrillHandler = $(async () => {
         const creationSaveButton = document.querySelector('.creation-save-button');
@@ -758,6 +797,8 @@ export default component$(() => {
         }
 
         hideOverlayHandler();
+
+        return drillData;
     });
 
     const sendNotification = $(async (payload: NotificationPayloadType) => {
@@ -776,11 +817,11 @@ export default component$(() => {
             return outputArray;
         }
 
-        const delay = 5; // seconds
-        const ttl = 5; // seconds
+        const delay = 0; // seconds
+        const ttl = 3; // seconds
 
         //const serverOrigin = import.meta.env.DEV ? `http://localhost:3000` : `http://localhost:3000`;
-        const serverOrigin = `https://front-cone-server.onrender.com`;
+        const serverOrigin = `https://front-cone-server-production.up.railway.app`;
 
         try {
             const registration = await navigator.serviceWorker.getRegistration('/')
@@ -905,46 +946,45 @@ export default component$(() => {
 
     const checkDrillTimes = $(() => {
         const drills = planDrills.value;
-        let limitCounter = 0;
-        const limit = 20;
 
-        if (drills) {
-            if (limitCounter > limit) return;
+        if (!drills) return;
 
-            drills.forEach((drillData) => {
-                const current = dayjs();
-                const start = dayjs(drillData.time_start, 'hh:mm A');
-                const end = dayjs(drillData.time_end, 'hh:mm A');
+        const current = dayjs();
 
-                if (drillData.status === 'LIVE' && current.isAfter(end)) {
+        drills.forEach((drillData) => {
+            const start = dayjs(drillData.time_start, 'hh:mm A');
+            const end = dayjs(drillData.time_end, 'hh:mm A');
+
+            if (current.isAfter(end)) {
+                if (drillData.status != 'COMPLETED' && drillData.status != 'LATE') {
                     drillData.status = 'LATE';
                     currentDrillData.value = drillData;
-                    limitCounter++;
+    
                     return saveDrillHandler();
                 }
+            }
 
-                if (drillData.status === 'UPCOMING') {
-                    if (current.isAfter(start) && current.isBefore(end)) {
-                        drillData.status = 'LIVE';
-                        currentDrillData.value = drillData;
-                        limitCounter++;
+            if (drillData.status === 'UPCOMING') {
+                if (current.isAfter(start) && current.isBefore(end)) {
+                    drillData.status = 'LIVE';
+                    currentDrillData.value = drillData;
 
-
-                        if (notificationCheckedState.value === true) {
-                            const payload = generateNotificationPayload({
-                                title: 'Drill Starting Now',
-                                drillTitle: drillData.title || 'Untitled',
-                                body: ''
-                            })
-                            sendNotification(payload)
-                        }
-
-                        return saveDrillHandler();
+                    if (notificationCheckedState.value === true) {
+                        const payload = generateNotificationPayload({
+                            title: 'Drill Starting Now',
+                            drillTitle: drillData.title || 'Untitled',
+                            body: ''
+                        })
+                        sendNotification(payload)
                     }
-                }
 
-            })
-        }
+                    return saveDrillHandler();
+                }
+            }
+
+        })
+
+        return 'checked.'
     })
 
     const markCompleteHandler = $((e: any) => {
@@ -1106,6 +1146,32 @@ export default component$(() => {
 
     const isPWA = useSignal(false);
 
+    const initializeServiceWorkerChecking = $(async () => {
+        const registration = await navigator.serviceWorker.getRegistration();
+        
+        if (registration) {
+            if (!planDrills.value) {
+                console.error('cannot initialize. @planDrills.value')
+                return;
+            }
+            registration.active?.postMessage({
+                type: 'init-check',
+                drills: planDrills.value
+            })
+            
+/*             navigator.serviceWorker.addEventListener('message', (message) => {
+                const messageType: SWMessageType = message.data.type;
+                if (messageType === 'check-drills') {
+                    const check = checkDrillTimes();
+                    console.log('checking drills', {check, message});
+                } 
+            }) */
+        } else {
+            console.log('No service worker in this environment')
+        }
+    })
+
+
     useVisibleTask$(() => {
         let displayMode = 'browser tab';
         if (window.matchMedia('(display-mode: standalone)').matches) {
@@ -1120,13 +1186,20 @@ export default component$(() => {
             runPlanHandler();
         }
 
+        initializeServiceWorkerChecking();
+
         setInterval(() => {
-            checkDrillTimes();
             adjustLiveBar('show');
+            checkDrillTimes();
             liveMetaStore.currentTime = dayjs().format('h:mm:ss A');
         }, 1000)
     });
 
+    const expandCurrentLiveDrillBox = $((e: any) => {
+        console.log(e)
+        const button = e.target as HTMLElement;
+        button.parentElement?.classList.toggle('expand');
+    })
 
 
     return (
@@ -1192,14 +1265,19 @@ export default component$(() => {
                                 <span class={`timeline-complete-quantity timeline-quantity ${completedDrills.length > 0 ? 'show' : ''}`}>{completedDrills.length} / {planDrills.value?.length} Complete</span>
                             </div>
 
-                            {currentLiveDrills.length > 0 ? 
+                            
                             <div class="live-current-drill-wrap">
-                                <span class="live-current-drill-label">Current Live Drill{currentLiveDrills.length > 1 ? 's' : ''}</span>
-                                <span class="live-current-drill-grid">{currentLiveDrills.map((drillData: Partial<DrillRow>) => {
+                                <div class="live-current-drill-label">
+                                    <span>Current Live Drills</span>
+                                    <div class="current-live-drill-count">{currentLiveDrills.length}</div>
+                                    {currentLiveDrills.length > 0 ? 
+                                        <svg onClick$={expandCurrentLiveDrillBox} viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="css-i6dzq1"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                                    : null}
+                                </div>
+                                <span  class="live-current-drill-grid">{currentLiveDrills.map((drillData: Partial<DrillRow>) => {
                                     return <CurrentLiveDrillBox data={drillData} key={drillData.uuid} />
                                 })}</span>
                             </div>
-                            : null}
                             
 
                         </div>
@@ -1333,19 +1411,25 @@ export default component$(() => {
                             <div class="description-label">Description</div>
                             <textarea
                             onInput$={(e) => {
-                                const value = (e.target as HTMLInputElement).value;
+                                const input = (e.target as HTMLInputElement);
+                                const value = input.value;
                                 currentDrillData.value.description = value;
+
+                                input.style.height = '0px';
+                                input.style.height = input.scrollHeight + 'px';
                             }}
                             class="drill-description-input"  value={currentDrillData.value.description || ''} />
 
                             <div class="drill-dating">
-                                <div class="drill-time-start">
-                                    <TimeStartPicker endTime={currentDrillData.value.time_end} inputHandler={pickerStartHandler}
-                                    value={currentDrillData.value.time_start} client:load />
-                                </div>
-                                <div class="drill-time-end">
-                                    <TimeEndPicker startTime={currentDrillData.value.time_start} inputHandler={pickerEndHandler} value={currentDrillData.value.time_end} client:load />
-                                </div>
+                                {import.meta.env.DEV ? <>
+                                    <div class="drill-time-start">
+                                        <TimeStartPicker endTime={currentDrillData.value.time_end} inputHandler={pickerStartHandler}
+                                        value={currentDrillData.value.time_start} client:load />
+                                    </div>
+                                    <div class="drill-time-end">
+                                        <TimeEndPicker startTime={currentDrillData.value.time_start} inputHandler={pickerEndHandler} value={currentDrillData.value.time_end} client:load />
+                                    </div> 
+                                </> : null}
                             </div>
 
                             <button class="creation-save-button" onClick$={saveDrillHandler}>{

@@ -8,7 +8,52 @@
  * You can also use this file to add more functionality that runs in the service worker.
  */
 import { setupServiceWorker } from '@builder.io/qwik-city/service-worker';
-import { type NotificationPayloadType } from './plan/[id]';
+importScripts('https://cdn.jsdelivr.net/npm/dayjs/dayjs.min.js')
+
+type NotificationPayloadType = {
+    /**
+     * Upcoming drill notification.
+     */
+    title: 'Drill Upcoming',
+    /**
+     * The drill title.
+     */
+    drillTitle: string
+    /**
+     * The body of an upcoming drill notification. 
+     * Automatic output: [Drill] starts in 5 minutes. Tap to view details.
+     */
+    body: string
+} | {
+    title: 'Drill Starting Now',
+    /**
+     * The drill title.
+     */
+    drillTitle: string
+    /**
+     * The body of an drill starting notification. 
+     * Automatic output: [Drill] is starting now. Tap to view details.
+     */
+    body: string
+} | {
+    title: 'Notification Test',
+    /*
+     * Automatic output: [Drill] is starting now. Tap to view details.
+     */
+    body: 'Notifications have been turned on.'
+}
+
+const generateNotificationPayload = (initialPayload: NotificationPayloadType) => {
+    const finalPayload = { ...initialPayload };
+
+    if (initialPayload.title === 'Drill Starting Now') {
+        finalPayload.body = initialPayload.drillTitle + ' is starting now. Tap to view details.';
+    } else if (initialPayload.title === 'Drill Upcoming') {
+        finalPayload.body = initialPayload.drillTitle + ' starts in 5 minutes. Tap to view details.';
+    } 
+
+    return finalPayload;
+}
 
 setupServiceWorker();
 
@@ -16,7 +61,7 @@ addEventListener('install', () => self.skipWaiting());
 
 addEventListener('activate', () => self.clients.claim());
 
-addEventListener('push', (event: any) => {
+const pushHandler = (event: any) => {
     // Retrieve the textual payload from event.data (a PushMessageData object).
     // Other formats are supported (ArrayBuffer, Blob, JSON), check out the documentation
     // on https://developer.mozilla.org/en-US/docs/Web/API/PushMessageData.
@@ -33,6 +78,162 @@ addEventListener('push', (event: any) => {
             icon: 'https://i.ibb.co/2j0b2DX/icon-256x256.png'
         })
     );
+}
+
+addEventListener('push', pushHandler)
+
+export type ClientMessageType = 'init-check' | 'stop-check';
+
+let checkDrillsInterval: NodeJS.Timer | undefined;
+
+const sendNotification = async (payload: NotificationPayloadType) => {
+    const urlBase64ToUint8Array = (base64String: string) => {
+        const padding = '='.repeat((4 - base64String.length % 4) % 4);
+        const base64 = (base64String + padding)
+        .replace(/-/g, '+')
+        .replace(/_/g, '/');
+
+        const rawData = window.atob(base64);
+        const outputArray = new Uint8Array(rawData.length);
+    
+        for (let i = 0; i < rawData.length; ++i) {
+            outputArray[i] = rawData.charCodeAt(i);
+        }
+        return outputArray;
+    }
+
+    const delay = 0; // seconds
+    const ttl = 3; // seconds
+
+    //const serverOrigin = import.meta.env.DEV ? `http://localhost:3000` : `http://localhost:3000`;
+    const serverOrigin = `https://front-cone-server.onrender.com`;
+
+    try {
+        const registration = await navigator.serviceWorker.getRegistration('/')
+        if (registration) {
+            const existingSub = await registration.pushManager.getSubscription();
+            let newSub;
+
+            if (!existingSub) {
+                const response = await fetch(serverOrigin + '/vapidPublicKey');
+                const vapidPublicKey = await response.text();
+
+                console.log({vapidPublicKey});
+
+                const convertedVapidKey = urlBase64ToUint8Array(vapidPublicKey);
+
+                newSub = await registration.pushManager.subscribe({
+                    userVisibleOnly: true,
+                    applicationServerKey: convertedVapidKey
+                });
+            } else {
+                newSub = existingSub;
+            }
+
+            console.log({newSub, existingSub})
+
+            const subscriptionRequest = await fetch(serverOrigin + '/register', {
+                method: 'post',
+                headers: {
+                    'Content-type': 'application/json'
+                },
+                body: JSON.stringify({
+                    subscription: newSub
+                }),
+            });
+
+            const notificationSendRequest = await fetch(serverOrigin + '/sendNotification', {
+                method: 'post',
+                headers: {
+                    'Content-type': 'application/json'
+                },
+                body: JSON.stringify({
+                    subscription: newSub,
+                    payload: JSON.stringify(payload),
+                    delay: delay,
+                    ttl: ttl,
+                }),
+            });
+
+            console.log({ subscriptionRequest, notificationSendRequest })
+        } else {
+            return 'No service worker registered. Move to a supported environment.';
+        }
+    } catch (error) {
+        return error;
+    }
+
+    return;
+}
+
+const checkDrillTimes = (drills: any) => {
+
+    //@ts-ignore
+    const current = dayjs();
+    
+    drills.forEach((drillData: any) => {
+        //@ts-ignore
+        const start = dayjs(drillData.time_start, 'hh:mm A');
+        //@ts-ignore
+        const end = dayjs(drillData.time_end, 'hh:mm A');
+
+        if (drillData.status === 'UPCOMING') {
+            if (current.isAfter(start) && current.isBefore(end)) {
+                console.log('sending notification by now.')
+
+                const payload = generateNotificationPayload({
+                    title: 'Drill Starting Now',
+                    drillTitle: drillData.title || 'Untitled',
+                    body: ''
+                })
+                sendNotification(payload)
+                
+            }
+        }
+
+    })
+}
+
+interface EventData {
+    type: ClientMessageType,
+    drills?: [{}]
+}
+
+addEventListener('message', async (event) => {
+    const { type, drills } = event.data as EventData;
+
+    if (type === 'stop-check') {
+        if (checkDrillsInterval) {
+            clearInterval(checkDrillsInterval);
+            return
+        } 
+
+        return console.warn('recieved a stop-check but no interval exists.')
+    }
+
+    if (type === 'init-check') {
+        if (checkDrillsInterval) {
+            clearInterval(checkDrillsInterval);
+            console.warn('interval already exists, clearing and creating a new one.')
+        }
+
+        //const messageType: SWMessageType = 'check-drills';
+
+        console.log('sw thread: initializing "check-drills" interval', {event});
+
+        checkDrillsInterval = setInterval(() => {
+            checkDrillTimes(drills)
+        }, 1000)
+
+        /* const clients = await self.clients.matchAll();
+        clients.forEach(client => {
+            checkDrillsInterval = setInterval(() => {
+                client.postMessage({ 
+                    type: messageType,
+                })
+            }, 1000)
+        }); */
+    }
 })
 
 declare const self: ServiceWorkerGlobalScope;
