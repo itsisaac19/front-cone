@@ -252,7 +252,6 @@ export const generateNotificationPayload = (initialPayload: NotificationPayloadT
 }
 
 export default component$(() => {
-console.log('preview value', import.meta.url.includes('file'), import.meta.env.PROD)
 
 const globalPrefersReducedMotion = useSignal(false);
 
