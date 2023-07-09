@@ -21,6 +21,12 @@ body:has(.drill-edit-overlay-outer.drill-edit-overlay-outer.show-grid),
 body:has(.plan-meta-overlay-outer.show-grid) {
   overflow: hidden;
 }
+html:has(.hamburger.open) {
+  overflow: hidden;
+}
+body:has(.hamburger.open) {
+  overflow: hidden;
+}
 
 .auth-wrapper .t-dOnDMp {
   --colors-brandButtonText: white;
@@ -248,18 +254,22 @@ body:has(.plan-meta-overlay-outer.show-grid) {
 }
 .auth-banner-wrap {
   margin: 0 0;
+  padding: 10px 20px;
   display: grid;
-  height: 40px;
-  background: #202020;
+  grid-template-columns: max-content max-content;
+  height: auto;
+  background: #111111;
   color: #ededed;
+  border-bottom: 1px solid #1d1d1d;
 }
 .auth-banner-grid {
   user-select: none;
-  margin: 0 auto;
+  margin: 5px auto;
   display: grid;
-  grid-auto-flow: column;
-  column-gap: 5px;
+  grid-auto-flow: row;
+  column-gap: 4px;
   grid-template-columns: max-content max-content;
+  grid-template-rows: auto;
 }
 .auth-banner-grid span {
   font-size: 14px;
@@ -279,15 +289,67 @@ body:has(.plan-meta-overlay-outer.show-grid) {
   cursor: pointer;
   text-underline-offset: 5px;
   text-decoration: underline;
-  margin: auto 0 auto 20px;
+  margin: 0px 0 5px 0px;
+
+  color: #ededed;
 }
 .dashboard-top-bar {
   margin: 0 0;
-  border-bottom: 1px solid #1d1d1d;
   display: grid;
   grid-template-columns: max-content 1fr max-content max-content;
   grid-auto-flow: column;
   padding: 0 10px 0 0;
+
+  position: relative;
+
+  border-bottom: 1px solid #1d1d1d;
+}
+
+.menu-sidebar-outer {
+  position: absolute;
+  top: 0px;
+  left: 0;
+  right: 0;
+  height: 100dvh;
+  background: #1d1d1d;
+
+  padding: 70px 20px;
+  display: none;
+
+  opacity: 0;
+
+  z-index: 1;
+}
+.menu-sidebar-inner {
+  display: grid;
+  grid-auto-flow: row;
+  height: max-content;
+}
+.menu-sidebar-outer.open {
+  display: grid;
+}
+.menu-sidebar-label:not(.first) {
+  margin: 30px 0 0 0;
+}
+.menu-sidebar-label {
+  color: #666;
+  font-variation-settings: 'wght' 500;
+  letter-spacing: 2px;
+  font-size: 14px;
+}
+.link-group {
+  margin: 10px 0;
+  display: grid;
+  grid-auto-flow: row;
+  row-gap: 10px;
+}
+.menu-sidebar-link {
+  margin: 0 0 0 0;
+  text-underline-offset: 10px;
+  text-decoration-thickness: 2px;
+  cursor: pointer;
+  color: #ededed;
+  font-size: 36px;
 }
 .dashboard-content {
   margin: 40px 6vw;
@@ -296,14 +358,15 @@ body:has(.plan-meta-overlay-outer.show-grid) {
   row-gap: 40px;
 }
 
+
 .hamburger {
   cursor: pointer;
-  margin: 15px 10px;
-  height: 35px;
-  width: 35px;
+  margin: 15px 15px;
+  height: 30px;
+  aspect-ratio: 1 / 1;
   padding: 5px;
-  border-radius: 12px;
-  border: 2px solid #1d1d1d;
+
+  z-index: 2;
 
   position: relative;
   display: grid;
@@ -313,13 +376,32 @@ body:has(.plan-meta-overlay-outer.show-grid) {
   width: auto;
   height: 30px;
 }
+.hamburger-lines {
+  display: grid;
+  grid-auto-flow: row;
+}
+.hamburger-lines div {
+  margin: auto 0 auto 0;
+  height: 2px;
+  transition: rotate 0.3s ease, translate 0.3s ease;
+  background: #ededed;
+}
+.open .hamburger-lines div {
+  rotate: 90deg;
+}
+.open .hamburger-lines div:nth-child(1) {
+  translate: 30% 10px;
+}
+.open .hamburger-lines div:nth-child(3) {
+  translate: -30% -10px;
+}
 
 .navigation-crumbs {
   display: grid;
   margin: auto auto auto 0px;
 }
-ul.breadcrumb {
-  padding: 10px 16px;
+.navigation-crumbs ul.breadcrumb {
+  padding: 10px 5px;
   list-style: none;
   margin: auto;
 }
@@ -771,8 +853,8 @@ ul.breadcrumb li a:hover {
 .image-logo {
   border: 2px solid rgb(33, 33, 33);
   border-radius: 50%;
-  width: 40px;
-  height: 40px;
+  width: 35px;
+  height: 35px;
 }
 
 

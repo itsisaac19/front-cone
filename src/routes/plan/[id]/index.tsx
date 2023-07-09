@@ -151,7 +151,7 @@ const detect = server$(() => {
     })
 })
 
-export const useTokens = routeLoader$(({ cookie }) => {
+export const useTokens = routeLoader$(({ cookie, redirect, params }) => {
     const accessToken = cookie.get('my-access-token')?.value;
     const refreshToken = cookie.get('my-refresh-token')?.value;
 
@@ -165,7 +165,7 @@ export const useTokens = routeLoader$(({ cookie }) => {
     
     if (!accessToken || !refreshToken) {
         console.log('No cookie found:', cookie)
-        //throw redirect(302, '/auth');
+        throw redirect(302, `/share/${params.id}`);
         return;
     } 
 
@@ -252,7 +252,9 @@ export const generateNotificationPayload = (initialPayload: NotificationPayloadT
 }
 
 export default component$(() => {
-    const globalPrefersReducedMotion = useSignal(false);
+console.log('preview value', import.meta.url.includes('file'), import.meta.env.PROD)
+
+const globalPrefersReducedMotion = useSignal(false);
 
     const showSettingsHandler = $(async () => {
 
@@ -401,6 +403,7 @@ export default component$(() => {
         return initial; 
     })
     const runPlanButtonText = useSignal('Run Live');
+    const isPlanLive = useSignal(false);
 
     const adjustLiveBar = $((action: 'show' | 'hide') => {
         if (runPlanButtonText.value === 'Run Live') return;
@@ -487,6 +490,39 @@ export default component$(() => {
 
     const currentUserEmail = useSignal('')
 
+    const startNotificationChecking = $(async () => {
+        const registration = await navigator.serviceWorker.getRegistration();
+        
+        if (registration) {
+            if (!plan.value || !planDrills.value) {
+                console.error('cannot initialize. @ !plan.value || !planDrills.value')
+            } else if (registration.active) {
+                console.log('postMessage (init-check) from startNotificationChecking')
+                registration.active.postMessage({
+                    type: 'init-check',
+                    drills: planDrills.value,
+                    planUUID: plan.value.data.uuid,
+                })
+            }
+        }
+    })
+
+    const stopNotificationChecking = $(async () => {
+        const registration = await navigator.serviceWorker.getRegistration();
+        
+        if (registration) {
+            if (!plan.value || !planDrills.value) {
+                console.error('cannot initialize. @ !plan.value || !planDrills.value')
+            } else if (registration.active) {
+                registration.active.postMessage({
+                    type: 'stop-check',
+                    drills: planDrills.value,
+                    planUUID: plan.value.data.uuid,
+                })
+            }
+        }
+    })
+
     const runPlanHandler = $((e?: any) => {
 
         const duration = globalPrefersReducedMotion.value ? 0 : 800;
@@ -513,6 +549,11 @@ export default component$(() => {
                 savePlanHandler();
             }
 
+            if (notificationCheckedState.value) {
+                startNotificationChecking();
+            }
+
+            isPlanLive.value = true; 
             return runPlanButtonText.value = 'Stop Live';
         }
 
@@ -532,6 +573,9 @@ export default component$(() => {
             savePlanHandler();
         }
 
+        stopNotificationChecking();
+
+        isPlanLive.value = false; 
         runPlanButtonText.value = 'Run Live';
     });
 
@@ -541,7 +585,11 @@ export default component$(() => {
 
             if (!existing.data.session) {
                 console.error('Existing session does not exist')
-                location.assign('/')
+                if (plan.value) {
+                    location.assign(`/share/${plan.value?.data.uuid}`)
+                } else {
+                    location.assign(`/`)
+                }
             } else {
                 console.log({existing});
                 if (existing.data.session.user.email) {
@@ -610,9 +658,7 @@ export default component$(() => {
                 supabase.removeChannel(channel)
                 //supabase.removeChannel(pushChannel)
             }
-        } else {
-            location.assign('/')
-        }
+        } 
     })
 
     const showOverlay = useStore({
@@ -881,17 +927,40 @@ export default component$(() => {
         return;
     })
 
-    const notificationCheckedState = useSignal(false);
+    const getNotificationState = useComputed$(() => {
+        const state = plan.value?.data.notifications ?? false;
+        return state;
+    })
+
+    const notificationCheckedState = useSignal(getNotificationState.value);
+    const isInitialNotificationCheckedState = useSignal(true);
 
     const notificationChangeHandler = $(async (e: any) => {
+        console.log('change handler fired.', e)
         const input = e.target as HTMLInputElement;
         input.classList.remove('requesting');
 
-        notificationCheckedState.value = input.checked;
+        if (isInitialNotificationCheckedState.value) {
+            const initialOpposite = !input.checked;
+            notificationCheckedState.value = initialOpposite;
+            input.checked = initialOpposite;
+
+            isInitialNotificationCheckedState.value = false;
+        } else {
+            notificationCheckedState.value = input.checked;
+        }
+
+        currentPlanData.value.notifications = input.checked;
 
         if (input.checked === false) {
+            stopNotificationChecking
+
+            console.log('handler fired - would have called save plan here.')
+        
+            savePlanHandler();
             return;
         }
+
 
         document.body.classList.add('requesting');
 
@@ -940,8 +1009,11 @@ export default component$(() => {
         document.body.classList.remove('requesting');
         if (testResponse.status === 'rejected') {
             alert(testResponse.reason);
-        }
+        } 
         console.log({testResponse, timeout});
+
+        console.log('handler fired - would have called save plan here.')
+        savePlanHandler(); // Does this re-invoke notificationChangeHandler?? 
     })
 
     const checkDrillTimes = $(() => {
@@ -969,7 +1041,7 @@ export default component$(() => {
                     drillData.status = 'LIVE';
                     currentDrillData.value = drillData;
 
-                    if (notificationCheckedState.value === true) {
+                    if (notificationCheckedState.value === true && isPlanLive.value === true) {
                         const payload = generateNotificationPayload({
                             title: 'Drill Starting Now',
                             drillTitle: drillData.title || 'Untitled',
@@ -1146,33 +1218,10 @@ export default component$(() => {
 
     const isPWA = useSignal(false);
 
-    const initializeServiceWorkerChecking = $(async () => {
-        const registration = await navigator.serviceWorker.getRegistration();
-        
-        if (registration) {
-            if (!planDrills.value) {
-                console.error('cannot initialize. @planDrills.value')
-                return;
-            }
-            registration.active?.postMessage({
-                type: 'init-check',
-                drills: planDrills.value
-            })
-            
-/*             navigator.serviceWorker.addEventListener('message', (message) => {
-                const messageType: SWMessageType = message.data.type;
-                if (messageType === 'check-drills') {
-                    const check = checkDrillTimes();
-                    console.log('checking drills', {check, message});
-                } 
-            }) */
-        } else {
-            console.log('No service worker in this environment')
-        }
-    })
 
 
-    useVisibleTask$(() => {
+
+    useVisibleTask$(async () => {
         let displayMode = 'browser tab';
         if (window.matchMedia('(display-mode: standalone)').matches) {
             displayMode = 'standalone';
@@ -1186,11 +1235,10 @@ export default component$(() => {
             runPlanHandler();
         }
 
-        initializeServiceWorkerChecking();
-
         setInterval(() => {
             adjustLiveBar('show');
             checkDrillTimes();
+            
             liveMetaStore.currentTime = dayjs().format('h:mm:ss A');
         }, 1000)
     });
@@ -1204,9 +1252,10 @@ export default component$(() => {
 
     return (
     <div>
-        {plan.value ? <AuthBanner accessString={'Editing'} planData={currentPlanData.value} currentEmail={currentUserEmail.value} /> : <></>}
         {plan.value ? <Navbar path={plan.value.path} planData={currentPlanData.value} currentEmail={currentUserEmail.value} /> : <></>}
 
+        {plan.value ? <AuthBanner accessString={'Editing'} planData={currentPlanData.value} currentEmail={currentUserEmail.value} /> : <></>}
+        
         <div class="create-plan-wrap">
             <div class="meta-actions-outer">
                 <div class="meta-actions-inner">
@@ -1248,7 +1297,7 @@ export default component$(() => {
             <div class="creation-outer">
                 <div class="creation-inner">
                     <div class="creation-live-tools">
-                        <div class={`live-tools-grid ${runPlanButtonText.value === 'Stop Live' ? 'live' : ''}`}>
+                        <div class={`live-tools-grid ${isPlanLive.value ? 'live' : ''}`}>
                             <button 
                             class={`run-plan-button`}
                             onClick$={runPlanHandler}
@@ -1256,7 +1305,7 @@ export default component$(() => {
 
                             <div class="live-timeline-meta">
                                 <span class="live-timeline-drill-label">Timeline</span>
-                                <span class="timeline-current-state">{runPlanButtonText.value === 'Stop Live' ? 'LIVE' : 'STANDBY'}</span>
+                                <span class="timeline-current-state">{isPlanLive.value ? 'LIVE' : 'STANDBY'}</span>
                                 <span class="timeline-meta-spacer"> | </span>
                                 <span class="timeline-current-time">{liveMetaStore.currentTime}</span>
                                 <span class={`timeline-status ${timelineStatusText.value.toLowerCase().split(' ').join('-')}`}>{timelineStatusText.value}</span>
@@ -1291,7 +1340,7 @@ export default component$(() => {
                     </div>
 
                     <div class="creation-grid-wrap">
-                        <div class={`creation-grid ${runPlanButtonText.value === 'Stop Live' ? 'live' : ''}`}>
+                        <div class={`creation-grid ${isPlanLive.value ? 'live' : ''}`}>
 
                         {planDrills.value ? planDrills.value.map((drillData: Partial<DrillRow>, index) => {
                             return <DrillItem data={drillData} editHandler={editDrillHandler} completeHandler={markCompleteHandler} key={drillData.uuid} index={index} />
@@ -1421,13 +1470,13 @@ export default component$(() => {
                             class="drill-description-input"  value={currentDrillData.value.description || ''} />
 
                             <div class="drill-dating">
-                                <div class="drill-time-start">
-                                    <TimeStartPicker endTime={currentDrillData.value.time_end} inputHandler={pickerStartHandler}
-                                    value={currentDrillData.value.time_start} client:load />
-                                </div>
-                                <div class="drill-time-end">
-                                    <TimeEndPicker startTime={currentDrillData.value.time_start} inputHandler={pickerEndHandler} value={currentDrillData.value.time_end} client:load />
-                                </div> 
+                                    <div class="drill-time-start">
+                                        <TimeStartPicker endTime={currentDrillData.value.time_end} inputHandler={pickerStartHandler}
+                                        value={currentDrillData.value.time_start} client:load />
+                                    </div>
+                                    <div class="drill-time-end">
+                                        <TimeEndPicker startTime={currentDrillData.value.time_start} inputHandler={pickerEndHandler} value={currentDrillData.value.time_end} client:load />
+                                    </div> 
                             </div>
 
                             <button class="creation-save-button" onClick$={saveDrillHandler}>{

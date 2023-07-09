@@ -340,13 +340,17 @@ export default component$(() => {
         }
     })
 
-
+    const expandCurrentLiveDrillBox = $((e: any) => {
+        console.log(e)
+        const button = e.target as HTMLElement;
+        button.parentElement?.classList.toggle('expand');
+    })
 
     return (
         <div class="dashboard-outer">
             <div class="dashboard-inner">
-                {plan.value ? <AuthBanner accessString={'Viewing'} planData={currentPlanData.value} currentEmail={currentUserEmail.value} /> : <></>}
                 {plan.value ? <Navbar path={plan.value.path} planData={currentPlanData.value} currentEmail={currentUserEmail.value} /> : <></>}
+                {plan.value ? <AuthBanner accessString={'Viewing'} planData={currentPlanData.value} currentEmail={currentUserEmail.value} /> : <></>}
                 <div class="view-plan-wrap">
                     <div class="meta-actions-outer">
                         <div class="meta-actions-inner">
@@ -401,23 +405,28 @@ export default component$(() => {
                         <div class="creation-inner">
                             <div class="creation-live-tools">
                                 <div class={`live-tools-grid ${isLive ? 'live' : ''}`}>
-                                {currentLiveDrills.length > 0 ?
-                                    <div class="live-current-drill-wrap">
-                                        <span class="live-current-drill-label">Current Drill{currentLiveDrills.length > 1 ? 's' : ''}</span>
-                                        <div class="live-current-drill-grid">
-                                        {currentLiveDrills.map((drillData: Partial<DrillRow>) => {
-                                            return <CurrentLiveDrillBox data={drillData} key={drillData.uuid} />
-                                        })}
-                                        </div>
-                                    </div> 
-                                : null}
-                                    <div class="live-timeline-meta">
+                                <div class="live-timeline-meta">
                                         <span class="timeline-current-time">{liveMetaStore.currentTime}</span>
                                         <span class={`timeline-status ${timelineStatusText.value.toLowerCase().split(' ').join('-')}`}>{timelineStatusText.value}</span>
                                         <span class={`timeline-live-quantity timeline-quantity ${currentLiveDrills.length > 0 ? 'show' : ''}`}>{currentLiveDrills.length} / {planDrills.value?.length} Live</span>
                                         <span class={`timeline-late-quantity timeline-quantity ${lateDrills.length > 0 ? 'show' : ''}`}>{lateDrills.length} / {planDrills.value?.length} Late</span>
                                         <span class={`timeline-complete-quantity timeline-quantity ${completedDrills.length > 0 ? 'show' : ''}`}>{completedDrills.length} / {planDrills.value?.length} Complete</span>
                                     </div>
+                                {currentLiveDrills.length > 0 ?
+                                    <div class="live-current-drill-wrap">
+                                        <div class="live-current-drill-label">
+                                            <span>Current Live Drills</span>
+                                            <div class="current-live-drill-count">{currentLiveDrills.length}</div>
+                                            {currentLiveDrills.length > 0 ? 
+                                                <svg onClick$={expandCurrentLiveDrillBox} viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="css-i6dzq1"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                                            : null}
+                                        </div>
+                                        <span  class="live-current-drill-grid">{currentLiveDrills.map((drillData: Partial<DrillRow>) => {
+                                            return <CurrentLiveDrillBox data={drillData} key={drillData.uuid} />
+                                        })}</span>
+                                    </div>
+                                : null}
+                                    
                                 </div>
                             </div>
                             <div class="creation-label">

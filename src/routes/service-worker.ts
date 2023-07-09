@@ -82,9 +82,8 @@ const pushHandler = (event: any) => {
 
 addEventListener('push', pushHandler)
 
-export type ClientMessageType = 'init-check' | 'stop-check';
+export type ClientMessageType = 'init-check' | 'stop-check' | 'update-drills';
 
-let checkDrillsInterval: NodeJS.Timer | undefined;
 
 const sendNotification = async (payload: NotificationPayloadType) => {
     const urlBase64ToUint8Array = (base64String: string) => {
@@ -167,6 +166,7 @@ const sendNotification = async (payload: NotificationPayloadType) => {
 }
 
 const checkDrillTimes = (drills: any) => {
+    console.log('checking from SW.')
 
     //@ts-ignore
     const current = dayjs();
@@ -196,34 +196,57 @@ const checkDrillTimes = (drills: any) => {
 
 interface EventData {
     type: ClientMessageType,
-    drills?: [{}]
+    drills?: [{}],
+    planUUID: string
+}
+
+
+interface intervalData {
+    interval: NodeJS.Timer | undefined,
+    drills?: [{}],
+    planUUID: string
+} 
+
+
+const planNotificationDict: { [key: string]: intervalData } = {
+
 }
 
 addEventListener('message', async (event) => {
-    const { type, drills } = event.data as EventData;
+    const { type, drills, planUUID } = event.data as EventData;
 
     if (type === 'stop-check') {
-        if (checkDrillsInterval) {
-            clearInterval(checkDrillsInterval);
-            return
-        } 
+        if (planNotificationDict[planUUID]?.interval) {
+            console.log('sw thread: stopping "check-drills" interval', { type, drills, planUUID });
+            clearInterval(planNotificationDict[planUUID].interval);
+            return;
+        }
+
 
         return console.warn('recieved a stop-check but no interval exists.')
     }
 
     if (type === 'init-check') {
-        if (checkDrillsInterval) {
-            clearInterval(checkDrillsInterval);
+        if (planNotificationDict[planUUID]?.interval) {
+            clearInterval(planNotificationDict[planUUID].interval);
             console.warn('interval already exists, clearing and creating a new one.')
         }
 
         //const messageType: SWMessageType = 'check-drills';
 
-        console.log('sw thread: initializing "check-drills" interval', {event});
+        if (drills) {
+            console.log('sw thread: initializing "check-drills" interval', { type, drills, planUUID });
 
-        checkDrillsInterval = setInterval(() => {
-            checkDrillTimes(drills)
-        }, 1000)
+            const checkDrillsInterval = setInterval(() => {
+                checkDrillTimes(drills)
+            }, 1000)
+    
+            planNotificationDict[planUUID] = {
+                interval: checkDrillsInterval,
+                drills,
+                planUUID
+            };
+        }
 
         /* const clients = await self.clients.matchAll();
         clients.forEach(client => {
@@ -234,6 +257,14 @@ addEventListener('message', async (event) => {
             }, 1000)
         }); */
     }
+
+    if (type === 'update-drills') {
+        const planIntervalData = planNotificationDict[planUUID];
+        if (planIntervalData?.interval) {
+            planIntervalData.drills = drills;
+        }
+    }
+
 })
 
 declare const self: ServiceWorkerGlobalScope;

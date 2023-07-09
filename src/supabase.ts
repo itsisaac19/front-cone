@@ -67,6 +67,7 @@ export interface Database {
         Row: {
           created_at: string | null
           description: string | null
+          notifications: boolean | null
           shared_link: string | null
           status: string | null
           title: string | null
@@ -78,6 +79,7 @@ export interface Database {
         Insert: {
           created_at?: string | null
           description?: string | null
+          notifications?: boolean | null
           shared_link?: string | null
           status?: string | null
           title?: string | null
@@ -89,6 +91,7 @@ export interface Database {
         Update: {
           created_at?: string | null
           description?: string | null
+          notifications?: boolean | null
           shared_link?: string | null
           status?: string | null
           title?: string | null
@@ -157,6 +160,7 @@ export interface Database {
         Row: {
           created_at: string | null
           description: string | null
+          notifications: boolean | null
           shared_link: string | null
           status: string | null
           title: string | null
@@ -168,6 +172,7 @@ export interface Database {
         Insert: {
           created_at?: string | null
           description?: string | null
+          notifications?: boolean | null
           shared_link?: string | null
           status?: string | null
           title?: string | null
@@ -179,6 +184,7 @@ export interface Database {
         Update: {
           created_at?: string | null
           description?: string | null
+          notifications?: boolean | null
           shared_link?: string | null
           status?: string | null
           title?: string | null

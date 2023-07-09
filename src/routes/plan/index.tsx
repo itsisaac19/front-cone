@@ -71,7 +71,7 @@ export const useBreadCrumbs = routeLoader$((requestEvent) => {
     }
 })
 
-export const useTokens = routeLoader$(({ cookie }) => {
+export const useTokens = routeLoader$(({ cookie, redirect }) => {
     const accessToken = cookie.get('my-access-token')?.value;
     const refreshToken = cookie.get('my-refresh-token')?.value;
 
@@ -84,7 +84,7 @@ export const useTokens = routeLoader$(({ cookie }) => {
 
     if (!accessToken || !refreshToken) {
         console.log('No cookie found:', cookie)
-        //throw redirect(302, '/auth');
+        throw redirect(302, '/');
         return;
     } 
 
@@ -168,3 +168,5 @@ export const head: DocumentHead = () => {
         ],
     };
 }
+
+
