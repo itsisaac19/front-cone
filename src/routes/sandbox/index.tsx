@@ -1,4 +1,4 @@
-import { $, component$, useSignal, useTask$, useVisibleTask$ } from '@builder.io/qwik';
+/* import { $, component$, useSignal, useTask$, useVisibleTask$ } from '@builder.io/qwik';
 import paper from 'paper';
 
 const writeVar = (label: string, val: any) => {
@@ -749,4 +749,10 @@ export const head = () => {
             },
         ],
     };
-}
+} */
+
+import { component$ } from '@builder.io/qwik'
+
+export default component$(() => {
+    return <></>
+})
