@@ -1,7 +1,7 @@
-import { $, component$, useSignal } from "@builder.io/qwik";
-import { Link } from "@builder.io/qwik-city";
-import anime from "animejs";
-import { BreadCrumbs } from "./crumbs";
+import { $, component$, useSignal } from '@builder.io/qwik';
+import { Link } from '@builder.io/qwik-city';
+import anime from 'animejs';
+import { BreadCrumbs } from './crumbs';
 
 interface NavbarProps {
     path: string,

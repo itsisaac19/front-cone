@@ -1,6 +1,6 @@
-import { component$ } from "@builder.io/qwik";
-import { Link } from "@builder.io/qwik-city";
-import { md5 } from "~/routes/share/[id]/utils";
+import { component$ } from '@builder.io/qwik';
+import { Link } from '@builder.io/qwik-city';
+import { md5 } from '~/routes/share/[id]/utils';
 
 interface AuthBannerProps {
     planData?: any,

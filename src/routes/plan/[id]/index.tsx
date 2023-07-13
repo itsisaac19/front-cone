@@ -1,14 +1,14 @@
-import { $, component$, useComputed$, useSignal, useStore, useTask$, useVisibleTask$ } from "@builder.io/qwik";
+import { $, component$, useComputed$, useSignal, useStore, useTask$, useVisibleTask$ } from '@builder.io/qwik';
 
 import { createClient } from '@supabase/supabase-js';
-import type { Database } from "~/supabase";
-import { type DocumentHead, routeLoader$, server$, useLocation, Link } from "@builder.io/qwik-city";
-import { TimeEndPicker, TimeStartPicker } from "~/components/dating";
-import dayjs from "dayjs";
+import type { Database } from '~/supabase';
+import { type DocumentHead, routeLoader$, server$, useLocation, Link } from '@builder.io/qwik-city';
+import { TimeEndPicker, TimeStartPicker } from '~/components/dating';
+import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 dayjs.extend(relativeTime)
 
-import { CurrentLiveDrillBox, DrillItem } from "~/components/drill-item";
+import { CurrentLiveDrillBox, DrillItem } from '~/components/drill-item';
 type PlanRow = Database['public']['Tables']['plans']['Row'];
 type DrillRow = Database['public']['Tables']['drills']['Row'];
 
@@ -135,9 +135,9 @@ const addPlanToRecovery = async (planData: Partial<PlanRow>) => {
 }
 
 import anime from 'animejs';
-import { Navbar } from "~/components/navbar";
-import { AuthBanner } from "~/components/auth-banner";
-import { NotificationSwitch } from "~/components/notification";
+import { Navbar } from '~/components/navbar';
+import { AuthBanner } from '~/components/auth-banner';
+import { NotificationSwitch } from '~/components/notification';
 
 
 const detect = server$(() => {
@@ -488,6 +488,14 @@ const globalPrefersReducedMotion = useSignal(false);
     })
 
     const currentUserEmail = useSignal('')
+
+    const getNotificationState = useComputed$(() => {
+        const state = plan.value?.data.notifications ?? false;
+        return state;
+    })
+
+    const notificationCheckedState = useSignal(getNotificationState.value);
+    const isInitialNotificationCheckedState = useSignal(true);
 
     const startNotificationChecking = $(async () => {
         const registration = await navigator.serviceWorker.getRegistration();
@@ -925,14 +933,6 @@ const globalPrefersReducedMotion = useSignal(false);
 
         return;
     })
-
-    const getNotificationState = useComputed$(() => {
-        const state = plan.value?.data.notifications ?? false;
-        return state;
-    })
-
-    const notificationCheckedState = useSignal(getNotificationState.value);
-    const isInitialNotificationCheckedState = useSignal(true);
 
     const notificationChangeHandler = $(async (e: any) => {
         console.log('change handler fired.', e)

@@ -1,8 +1,8 @@
 /** @jsxImportSource react */
 import * as React from 'react';
-import { qwikify$ } from "@builder.io/qwik-react";
+import { qwikify$ } from '@builder.io/qwik-react';
 
-import { createTheme, ThemeProvider, Switch } from "@mui/material";
+import { createTheme, ThemeProvider, Switch } from '@mui/material';
 
 const theme = createTheme(
     {

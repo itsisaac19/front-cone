@@ -9,7 +9,7 @@ export type Json =
 export interface Database {
   public: {
     Tables: {
-      "deleted-drills": {
+      'deleted-drills': {
         Row: {
           created_at: string | null
           description: string | null
@@ -63,7 +63,7 @@ export interface Database {
         }
         Relationships: []
       }
-      "deleted-plans": {
+      'deleted-plans': {
         Row: {
           created_at: string | null
           description: string | null

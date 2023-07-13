@@ -1,11 +1,11 @@
-import { $, component$, useSignal } from "@builder.io/qwik";
+import { $, component$, useSignal } from '@builder.io/qwik';
 import { Link } from '@builder.io/qwik-city';
 
-import dayjs from "dayjs";
+import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 dayjs.extend(relativeTime)
 
-import type { Database } from "~/supabase";
+import type { Database } from '~/supabase';
 type PlanRow = Database['public']['Tables']['plans']['Row'];
 
 export const PlanItem = component$((data: PlanRow) => {

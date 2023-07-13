@@ -1,7 +1,7 @@
 import { $, component$, useSignal, useVisibleTask$ } from '@builder.io/qwik';
 import { createClient } from '@supabase/supabase-js';
 
-import type { Database } from "~/supabase";
+import type { Database } from '~/supabase';
 import { type DocumentHead, routeLoader$, server$ } from '@builder.io/qwik-city';
 import { PlanItem } from '~/components/plan-item';
 import { Navbar } from '~/components/navbar';

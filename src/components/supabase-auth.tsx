@@ -12,7 +12,7 @@ const supabase = createClient('https://mockfcvyjtpqnpctspcq.supabase.co', 'eyJhb
 });
 
 interface SupabaseAuthProps {
-    view: "sign_in" | "sign_up" | "magic_link" | "forgotten_password" | "update_password" | "verify_otp"
+    view: 'sign_in' | 'sign_up' | 'magic_link' | 'forgotten_password' | 'update_password' | 'verify_otp'
     children: any
 }
 

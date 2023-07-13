@@ -1,14 +1,14 @@
-import { $, component$, useComputed$, useSignal, useStore, useVisibleTask$ } from "@builder.io/qwik";
+import { $, component$, useComputed$, useSignal, useStore, useVisibleTask$ } from '@builder.io/qwik';
 import { createClient } from '@supabase/supabase-js';
 
-import type { Database } from "~/supabase";
-import { type DocumentHead, routeLoader$, server$ } from "@builder.io/qwik-city";
-import { CurrentLiveDrillBox, DrillItem } from "~/components/drill-item";
-import dayjs from "dayjs";
-import { md5 } from "./utils";
-import { Navbar } from "~/components/navbar";
-import anime from "animejs";
-import { AuthBanner } from "~/components/auth-banner";
+import type { Database } from '~/supabase';
+import { type DocumentHead, routeLoader$, server$ } from '@builder.io/qwik-city';
+import { CurrentLiveDrillBox, DrillItem } from '~/components/drill-item';
+import dayjs from 'dayjs';
+import { md5 } from './utils';
+import { Navbar } from '~/components/navbar';
+import anime from 'animejs';
+import { AuthBanner } from '~/components/auth-banner';
 type PlanRow = Database['public']['Tables']['plans']['Row'];
 type DrillRow = Database['public']['Tables']['drills']['Row'];
 

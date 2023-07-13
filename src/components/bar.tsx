@@ -1,4 +1,4 @@
-import { component$, useVisibleTask$ } from "@builder.io/qwik";
+import { component$, useVisibleTask$ } from '@builder.io/qwik';
 import NProgress from 'nprogress';
 
 export const ProgressBar = component$(() => {
@@ -17,11 +17,11 @@ export const ProgressBar = component$(() => {
         const delay = 0;
         
         const load = () => {
-            if (state === "loading") {
+            if (state === 'loading') {
                 return;
             }
         
-            state = "loading";
+            state = 'loading';
         
             timer = setTimeout(function () {
                 NProgress.start();
@@ -33,7 +33,7 @@ export const ProgressBar = component$(() => {
                 return;
             }
         
-            state = "stop";
+            state = 'stop';
         
             clearTimeout(timer);
             NProgress.done();
