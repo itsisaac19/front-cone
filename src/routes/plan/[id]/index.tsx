@@ -328,13 +328,8 @@ const globalPrefersReducedMotion = useSignal(false);
     const { url }  = useLocation();
     const liveParam = url.searchParams.get('live');
 
-    //@ts-ignore
-    global.navigator = {
-        userAgent: 'node',
-    }
-
     useVisibleTask$(() => {
-        const checkIfMobile = () => {
+        /* const checkIfMobile = () => {
             try {
                 const a = (navigator?.userAgent || navigator?.vendor || null);
                 if (!a) return false;
@@ -348,13 +343,13 @@ const globalPrefersReducedMotion = useSignal(false);
                 console.error(error)
                 return false
             }
-        }
+        } */
 
         const getReducedMotion = () => {
             const media = window.matchMedia(`(prefers-reduced-motion: reduce)`).matches === true;
-            const mobile = checkIfMobile();
+            //const mobile = checkIfMobile();
 
-            return (media || mobile)
+            return (media)
         }
 
         globalPrefersReducedMotion.value = getReducedMotion();
