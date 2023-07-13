@@ -328,6 +328,11 @@ const globalPrefersReducedMotion = useSignal(false);
     const { url }  = useLocation();
     const liveParam = url.searchParams.get('live');
 
+    //@ts-ignore
+    global.navigator = {
+        userAgent: 'node',
+    }
+
     useVisibleTask$(() => {
         const checkIfMobile = () => {
             try {
