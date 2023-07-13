@@ -3,8 +3,8 @@ import { $, component$, useComputed$, useSignal, useStore, useTask$, useVisibleT
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from '~/supabase';
 import { type DocumentHead, routeLoader$, server$, useLocation, Link } from '@builder.io/qwik-city';
-import { TimeEndPicker, TimeStartPicker } from '~/components/dating';
-import dayjs from 'dayjs';
+/* import { TimeEndPicker, TimeStartPicker } from '~/components/dating';
+ */import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 dayjs.extend(relativeTime)
 
@@ -17,7 +17,6 @@ const supabase = createClient('https://mockfcvyjtpqnpctspcq.supabase.co', 'eyJhb
         persistSession: true,
     }
 });
-
 
 
 export const usePlan = routeLoader$(async (requestEvent) => {
@@ -1125,7 +1124,7 @@ const globalPrefersReducedMotion = useSignal(false);
         }
     })
 
-    const pickerStartHandler = $((value: dayjs.Dayjs | null) => {
+/*     const pickerStartHandler = $((value: dayjs.Dayjs | null) => {
         if (value) {
             const formatted = value.format('hh:mm A')
             console.log('timepicker start value', formatted);
@@ -1140,7 +1139,7 @@ const globalPrefersReducedMotion = useSignal(false);
 
             currentDrillData.value.time_end = formatted;
         }
-    })
+    }) */
 
     
 
@@ -1479,13 +1478,13 @@ const globalPrefersReducedMotion = useSignal(false);
                             class="drill-description-input"  value={currentDrillData.value.description || ''} />
 
                             <div class="drill-dating">
-                                    <div class="drill-time-start">
+                                    {/* <div class="drill-time-start">
                                         <TimeStartPicker endTime={currentDrillData.value.time_end} inputHandler={pickerStartHandler}
                                         value={currentDrillData.value.time_start} client:load />
                                     </div>
                                     <div class="drill-time-end">
                                         <TimeEndPicker startTime={currentDrillData.value.time_start} inputHandler={pickerEndHandler} value={currentDrillData.value.time_end} client:load />
-                                    </div> 
+                                    </div>  */}
                             </div>
 
                             <button class="creation-save-button" onClick$={saveDrillHandler}>{
