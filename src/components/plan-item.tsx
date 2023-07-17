@@ -1,7 +1,11 @@
-import { $, component$, useSignal } from "@builder.io/qwik";
+import { $, component$, useSignal } from '@builder.io/qwik';
 import { Link } from '@builder.io/qwik-city';
 
-import type { Database } from "~/supabase";
+import dayjs from 'dayjs';
+import relativeTime from 'dayjs/plugin/relativeTime';
+dayjs.extend(relativeTime)
+
+import type { Database } from '~/supabase';
 type PlanRow = Database['public']['Tables']['plans']['Row'];
 
 export const PlanItem = component$((data: PlanRow) => {
@@ -29,6 +33,16 @@ export const PlanItem = component$((data: PlanRow) => {
         <div class="plan-item-outer">
             <div class="plan-item">
                 <div class="plan-primary-content">
+                    <div class="plan-updated-text">
+                        {data.updated_at ? 
+                        <>
+                            <span>Updated {dayjs(data.updated_at).fromNow()}</span>
+                            <span> | </span>
+                            <span> {dayjs(data.updated_at).format('M.D.YYYY h:mm A')} </span>
+                        </>
+                        : <></>
+                        }
+                    </div>
                     <div class="plan-item-title">{data.title || 'Untitled'}</div>
                     <div class="plan-item-description">{data.description || 'No description'}</div>
                 </div>

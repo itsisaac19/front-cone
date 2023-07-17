@@ -1,10 +1,41 @@
 //@ts-nocheck
-import { component$ } from '@builder.io/qwik';
+import { component$, useVisibleTask$ } from '@builder.io/qwik';
 import { type DocumentHead } from '@builder.io/qwik-city';
+import { createClient } from '@supabase/supabase-js';
 import { SupabaseAuth } from '~/components/supabase-auth';
+
+const supabase = createClient('https://mockfcvyjtpqnpctspcq.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1vY2tmY3Z5anRwcW5wY3RzcGNxIiwicm9sZSI6ImFub24iLCJpYXQiOjE2ODY4MDc4ODQsImV4cCI6MjAwMjM4Mzg4NH0.bcBpMwUR3kdjXSbZAePUpExkmX0UdgRM_ANtI9G1v0s', {
+    auth: {
+        persistSession: true,
+    }
+});
 
 export default component$(() => {
   //const hash = useHash();
+
+    useVisibleTask$(() => {
+      supabase.auth.onAuthStateChange((event, session) => {
+          console.log({event, session});
+          
+          if (event === 'SIGNED_OUT') {
+              // delete cookies on sign out
+              const expires = new Date(0).toUTCString()
+              document.cookie = `my-access-token=; path=/; expires=${expires}; SameSite=Lax;`
+              document.cookie = `my-refresh-token=; path=/; expires=${expires}; SameSite=Lax;`
+              document.cookie = `userid=; path=/; expires=${expires}; SameSite=Lax;`;
+
+          } else if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+              const maxAge = 100 * 365 * 24 * 60 * 60 // 100 years, never expires
+              document.cookie = `my-access-token=${session!.access_token}; path=/; max-age=${maxAge}; SameSite=Lax;`
+              document.cookie = `my-refresh-token=${session!.refresh_token}; path=/; max-age=${maxAge}; SameSite=Lax;`
+              document.cookie = `userid=${session!.user.id}; path=/; max-age=${maxAge}; SameSite=Lax;`;
+          }
+
+          if (event == 'SIGNED_IN' || session?.user) {
+              location.assign('/plan')
+          }
+      })
+  })
 
   return (
     <div class="main-outer">
@@ -39,7 +70,7 @@ export default component$(() => {
                   Create an Account
               </div>
               <div class="auth-wrapper">
-                  <SupabaseAuth view={'sign_up'} client:only />
+                  <SupabaseAuth view={'sign_up'} client:load />
               </div>
           </div>
       </div>

@@ -3,6 +3,7 @@ import { QwikCityProvider, RouterOutlet, ServiceWorkerRegister } from '@builder.
 import { RouterHead } from './components/router-head';
 
 import './global.css';
+//import '../global-light.css';
 
 import { ProgressBar } from './components/bar';
 

@@ -1,10 +1,17 @@
 /** @jsxImportSource react */
 import * as React from 'react';
 import { LocalizationProvider } from '@mui/x-date-pickers';
-import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs'
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 
-import { createTheme, ThemeProvider } from '@mui/material/styles';
 import { TimePicker } from '@mui/x-date-pickers';
+
+
+
+import { qwikify$ } from '@builder.io/qwik-react';
+import dayjs from 'dayjs';
+import customParseFormat from 'dayjs/plugin/customParseFormat';
+import { createTheme, ThemeProvider } from '@mui/material';
+dayjs.extend(customParseFormat)
 
 const theme = createTheme(
     {
@@ -16,12 +23,6 @@ const theme = createTheme(
         }
     },
 );
-
-
-import { qwikify$ } from "@builder.io/qwik-react";
-import dayjs from 'dayjs';
-import customParseFormat from 'dayjs/plugin/customParseFormat';
-dayjs.extend(customParseFormat)
 
 interface TimePickerProps {
     inputHandler: (value: dayjs.Dayjs | null) => void,

@@ -12,5 +12,8 @@ export default defineConfig(() => {
         "Cache-Control": "public, max-age=600",
       },
     },
+    ssr: {
+      external: ['web-push']
+    }
   };
 });

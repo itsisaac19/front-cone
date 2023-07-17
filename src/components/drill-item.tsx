@@ -1,9 +1,9 @@
-import { component$, useSignal, useVisibleTask$, type QRL } from "@builder.io/qwik";
+import { component$, useSignal, useVisibleTask$, type QRL } from '@builder.io/qwik';
 
-import type { Database } from "~/supabase";
+import type { Database } from '~/supabase';
 type DrillRow = Database['public']['Tables']['drills']['Row'];
 
-import dayjs from "dayjs";
+import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import customParseFormat from 'dayjs/plugin/customParseFormat';
 dayjs.extend(customParseFormat)
