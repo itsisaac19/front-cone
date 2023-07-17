@@ -1,5 +1,10 @@
-/* import { $, component$, useSignal, useTask$, useVisibleTask$ } from '@builder.io/qwik';
-import paper from 'paper';
+import { $, component$, type NoSerialize, noSerialize, useSignal, useStore, useTask$, useVisibleTask$ } from '@builder.io/qwik';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+// This import statement is just for type information
+import type Paper from 'paper';
+
+// Dummy variable for the global paper object
+declare const paper: typeof Paper;
 
 const writeVar = (label: string, val: any) => {
     const writeBox = document.querySelector('.write-box') as HTMLElement;
@@ -37,13 +42,15 @@ interface SectorFieldProps {
     sectorRadius: number,
     sectorAngle: number,
     group: paper.Group,
+    offense: boolean,
+    index: number,
 }
 
 const sectorArray: paper.Path.Arc[] = [];
 const sectorIntersectionAreas: { [authorId: number]: { [id: number]: paper.PathItem | undefined } }= {};
 
 const drawSectorFieldOnCircle = (props: SectorFieldProps) => {
-    const { circle: playerCircle, sectorRadius, sectorAngle, group } = props;
+    const { circle: playerCircle, sectorRadius, sectorAngle, group, offense, index } = props;
 
     const getZoom = () => paper.view.zoom;
     const areHandlersDisabled = () => document.body.classList.contains('disable-handlers');
@@ -71,9 +78,10 @@ const drawSectorFieldOnCircle = (props: SectorFieldProps) => {
         center.y + (radius + sectorRadius) * -Math.sin(midpointAngle * (Math.PI / 180))
     );
 
-    const throughCircle = new paper.Path.Circle(through.add(new paper.Point(0, -20)), 8);
+    const throughCircle = new paper.Path.Circle(through.add(new paper.Point(0, 0)), 10);
     throughCircle.strokeWidth = 2;
     throughCircle.fillColor = new paper.Color('gold');
+    throughCircle.opacity = 0;
 
     const end = new paper.Point(
         center.x + (radius + sectorRadius) * Math.cos(endAngle * (Math.PI / 180)),
@@ -81,39 +89,60 @@ const drawSectorFieldOnCircle = (props: SectorFieldProps) => {
     );
 
     
-    const sector = new paper.Path.Arc(start, through, end);
-    sector.lineTo(center)
-    sector.lineTo(start)
+    const sector = Object.assign(new paper.Path.Arc(start, through, end), {
+        applyMatrix: false,
+        fillColor: new paper.Color(0.1, 0.1, 0.1, 1)
+    });
+    sector.lineTo(center);
+    sector.lineTo(start);
     sector.closePath();
-    sector.fillColor = new paper.Color(0.1, 0.1, 0.1, 1);
     sector.sendToBack();
-    sector.applyMatrix = false;
+    //group.addChild(sector)
+
+/*     const sectorText = Object.assign(new paper.PointText(sector.bounds.center), {
+        justification: 'center',
+        content: sector.id,
+        fillColor: 'white',
+        fontSize: '18px',
+        fontFamily: 'Satoshi',
+    }); */
+
+    const playerNumber = Object.assign(new paper.PointText(playerCircle.bounds.center.add(new paper.Point(0, 6))), {
+        justification: 'center',
+        content: `P${index + 1}`,
+        fillColor: offense ? 'black' : 'white',
+        fontSize: '18px',
+        fontFamily: 'Satoshi',
+        fontWeight: 600
+    });
+    playerNumber.applyMatrix = false;
+    const playerCircleGroup = new paper.Group([playerCircle, playerNumber])
+    group.addChild(playerCircleGroup)
 
     const startHinter = new paper.Point(
-        center.x + (radius + sectorRadius + 15) * Math.cos(80 * (Math.PI / 180)),
-        center.y + (radius + sectorRadius + 15) * -Math.sin(80 * (Math.PI / 180))
+        center.x + (radius + sectorRadius + 20) * Math.cos(80 * (Math.PI / 180)),
+        center.y + (radius + sectorRadius + 20) * -Math.sin(80 * (Math.PI / 180))
     );
 
     const throughHinter = new paper.Point(
-        center.x + (radius + sectorRadius + 20) * Math.cos(90 * (Math.PI / 180)),
-        center.y + (radius + sectorRadius + 20) * -Math.sin(90 * (Math.PI / 180))
+        center.x + (radius + sectorRadius + 25) * Math.cos(90 * (Math.PI / 180)),
+        center.y + (radius + sectorRadius + 25) * -Math.sin(90 * (Math.PI / 180))
     );
 
     const endHinter = new paper.Point(
-        center.x + (radius + sectorRadius + 15) * Math.cos(100 * (Math.PI / 180)),
-        center.y + (radius + sectorRadius + 15) * -Math.sin(100 * (Math.PI / 180))
+        center.x + (radius + sectorRadius + 20) * Math.cos(100 * (Math.PI / 180)),
+        center.y + (radius + sectorRadius + 20) * -Math.sin(100 * (Math.PI / 180))
     );
 
     const hinterArc = new paper.Path.Arc(startHinter, throughHinter, endHinter);
-    const gold = new paper.Color('gold');
-    gold.brightness = 0
-    hinterArc.strokeColor = new paper.Color('#806c00');
+    hinterArc.strokeColor = new paper.Color('gold');
     hinterArc.strokeWidth = 4;
     hinterArc.opacity = 0;
 
     const arrowheadStart = new paper.Path({
-        strokeColor: gold,
-        fillColor: gold
+        strokeColor: new paper.Color('gold'),
+        fillColor: new paper.Color('gold'),
+        opacity: 0
     });
     
     // Set the arrowhead shape
@@ -121,17 +150,13 @@ const drawSectorFieldOnCircle = (props: SectorFieldProps) => {
     arrowheadStart.add(new paper.Point(10, 5));
     arrowheadStart.add(new paper.Point(10, -5));
     arrowheadStart.closed = true;
-    arrowheadStart.strokeColor = new paper.Color('#806c00');
-    arrowheadStart.fillColor = new paper.Color('#806c00');
-    arrowheadStart.opacity = 0;
-
     arrowheadStart.position = endHinter;
-    
-    // Rotate the arrowhead to match the arc's direction
     arrowheadStart.rotate(hinterArc.getTangentAt(0).angle);
+
     const arrowheadEnd = new paper.Path({
-        strokeColor: gold,
-        fillColor: gold
+        strokeColor: new paper.Color('gold'),
+        fillColor: new paper.Color('gold'),
+        opacity: 0
     });
     
     // Set the arrowhead shape
@@ -139,46 +164,45 @@ const drawSectorFieldOnCircle = (props: SectorFieldProps) => {
     arrowheadEnd.add(new paper.Point(10, 5));
     arrowheadEnd.add(new paper.Point(10, -5));
     arrowheadEnd.closed = true;
-    arrowheadEnd.strokeColor = new paper.Color('#806c00');
-    arrowheadEnd.fillColor = new paper.Color('#806c00');
-    arrowheadEnd.opacity = 0;
-    
     arrowheadEnd.position = startHinter;
-    
-    // Rotate the arrowhead to match the arc's direction
     arrowheadEnd.rotate(hinterArc.getTangentAt(hinterArc.length).angle + 50);
+
     group.addChildren([hinterArc, arrowheadStart, arrowheadEnd])
     group.addChild(throughCircle)
 
-    playerCircle.onMouseEnter = function () {
+    playerCircleGroup.onMouseEnter = function () {
         if (areHandlersDisabled()) return;
 
-        group.bringToFront();
+        if (group.id === group.parent.lastChild.id) {
+            console.log('already at front');
+        } else {
+            group.bringToFront();
+        }
 
 
         if (document.querySelector('.sandbox-wrap.move')) return;
 
         playerCircle.tween({
-            scaling: 1.3
+            scaling: 1.1
         },{
             easing: 'easeOutCubic',
-            duration: 400
+            duration: 200
         })
 
         document.body.style.cursor = 'grab';
     }
-    playerCircle.onMouseLeave = function () {
+    playerCircleGroup.onMouseLeave = function () {
         playerCircle.tween({
             scaling: 1
         },{
             easing: 'easeOutCubic',
-            duration: 400
+            duration: 200
         })
 
         document.body.style.cursor = 'default';
     }
 
-    const savedCirclePosition = {
+    const savedPlayerCirclePosition = {
         x: playerCircle.position.x,
         y: playerCircle.position.y
     }
@@ -189,7 +213,6 @@ const drawSectorFieldOnCircle = (props: SectorFieldProps) => {
     
     sectorArray.push(sector);
 
-    let isSectorTweening = false;
 
     const checkSectorIntersections = (currentAuthorId: number) => {
         for(const authorIdKey in sectorIntersectionAreas) {
@@ -208,72 +231,97 @@ const drawSectorFieldOnCircle = (props: SectorFieldProps) => {
             const sectorIntersectsCurrent = sectorIntersectionAreas[authorIdKey]?.[currentAuthorId];
             if (sectorIntersectsCurrent) {
                 sectorIntersectsCurrent.remove();
+                delete sectorIntersectionAreas[authorIdKey][currentAuthorId];
+                if (Object.keys(sectorIntersectionAreas[authorIdKey]).length === 0) {
+                    delete sectorIntersectionAreas[authorIdKey];
+                }
             }
         }
 
         clearVar(['intersection-tL', 'intersection-tR', 'intersection-bR', 'intersection-bL'])
         
+        const nonIntersectedSavedSectors: paper.Path.Arc[] = [];
+        let atLeastOneIntersection = false;
+
         sectorArray.forEach(savedSector => {
-            if (savedSector.id == sector.id) return;
+            if (sector.id === savedSector.id) return;
+            if (sector.layer.id !== savedSector.layer.id) return;
+
+            const existingArea = sectorIntersectionAreas[sector.id]?.[savedSector.id];
+            if (existingArea) {
+                existingArea.remove();
+                delete sectorIntersectionAreas[sector.id][savedSector.id];
+            }
 
             if (sector.intersects(savedSector)) {
+                atLeastOneIntersection = true;
                 const area = sector.intersect(savedSector);
                 area.fillColor = new paper.Color('#EECD2Cad');
                 
-                if (!isSectorTweening) {
-                    console.count('tweening')
-                    isSectorTweening = true;
-                    sector.tween({
-                        fillColor: '#474747',
-                    }, {
-                        duration: 500,
-                        easing: 'easeOutQuad'
-                    })
-                    savedSector.tween({
-                        fillColor: '#474747',
-                    }, {
-                        duration: 500,
-                        easing: 'easeOutQuad'
-                    })
-                    setTimeout(() => {
-                        isSectorTweening = false;              
-                    }, 500)
-                }
+                //console.log(`tweening ${sector.id} && ${savedSector.id}`)
+                sector.tween({
+                    fillColor: new paper.Color('#474747')
+                }, {
+                    duration: 300,
+                    easing: 'easeOutCubic'
+                })
+                savedSector.tween({
+                    fillColor: new paper.Color('#474747')
+                }, {
+                    duration: 300,
+                    easing: 'easeOutCubic'
+                })
                 
 
                 writeVar('intersection-tL', area.bounds.topLeft)
                 writeVar('intersection-tR', area.bounds.topRight)
                 writeVar('intersection-bR', area.bounds.bottomRight)
                 writeVar('intersection-bL', area.bounds.bottomLeft)
-    
-                const existingArea = sectorIntersectionAreas[sector.id]?.[savedSector.id];
-                if (existingArea) {
-                    existingArea.remove();
+
+                const existingDict = sectorIntersectionAreas[sector.id];
+                sectorIntersectionAreas[sector.id] = {
+                    ...existingDict,
+                    [savedSector.id]: area
                 }
     
-                sectorIntersectionAreas[sector.id] = {
-                    [savedSector.id]: area
-                };
             } else {
+                nonIntersectedSavedSectors.push(savedSector)
+            }
+        });
+
+        nonIntersectedSavedSectors.forEach(savedSector => {
+            
+
+            const isIntersectedElsewhere = Object.values(sectorIntersectionAreas).some(area => {
+                return area[savedSector.id] ? true : false
+            })
+
+            if (isIntersectedElsewhere || sectorIntersectionAreas[savedSector.id]) {
+                //console.log(savedSector.id, ' is being intersected but not by the author.')
+            } else {
+                //console.log(savedSector.id, ' is not being intersected by anyone.')
                 savedSector.tween({
-                    fillColor: new paper.Color(0.1, 0.1, 0.1, 1),
+                    fillColor: new paper.Color(0.1, 0.1, 0.1, 1)
                 }, {
-                    duration: 500,
-                    easing: 'easeOutQuad'
-                })
-                sector.tween({
-                    fillColor: new paper.Color(0.1, 0.1, 0.1, 1),
-                }, {
-                    duration: 500,
-                    easing: 'easeOutQuad'
+                    duration: 300,
+                    easing: 'easeOutCubic'
                 })
             }
+        })
 
-        });
+        if (!atLeastOneIntersection) {
+            delete sectorIntersectionAreas[sector.id];
+            //console.log(`tweening ${sector.id} (author) back to normal`)
+            sector.tween({
+                fillColor: new paper.Color(0.1, 0.1, 0.1, 1)
+            }, {
+                duration: 300,
+                easing: 'easeOutCubic'
+            })
+        }
     }
 
     const playerCircleMouseMoveHandler = (e: any) => {
-        document.body.style.cursor = 'grabbing';
 
         const zoom = getZoom();
         const event: MouseEvent = e;
@@ -287,27 +335,42 @@ const drawSectorFieldOnCircle = (props: SectorFieldProps) => {
         sector.position.x += deltaX;
         sector.position.y += deltaY;
 
-        savedCirclePosition.x += deltaX;
-        savedCirclePosition.y += deltaY;
+        savedPlayerCirclePosition.x += deltaX;
+        savedPlayerCirclePosition.y += deltaY;
 
         savedThroughCirclePosition.x += deltaX;
         savedThroughCirclePosition.y += deltaY;
 
-        writeVar('circle-x', savedCirclePosition.x);
-        writeVar('circle-y', savedCirclePosition.y);
+        writeVar('circle-x', savedPlayerCirclePosition.x);
+        writeVar('circle-y', savedPlayerCirclePosition.y);
 
         checkSectorIntersections(sector.id);
     }
 
-    playerCircle.onMouseDown = () => {
+    playerCircleGroup.onMouseDown = () => {
         if (areHandlersDisabled()) return;
         disableHandlers();
+        document.body.style.cursor = 'grabbing';
 
-        console.log('assigingin')
         document.addEventListener('mousemove', playerCircleMouseMoveHandler)
 
-        playerCircle.onMouseUp = () => {
+        playerCircle.tween({
+            scaling: 0.9
+        },{
+            easing: 'easeOutCubic',
+            duration: 200
+        })
+
+        playerCircleGroup.onMouseUp = () => {
             enableHandlers();
+
+            playerCircle.tween({
+                scaling: 1.1
+            },{
+                easing: 'easeOutCubic',
+                duration: 200
+            })
+
             document.removeEventListener('mousemove', playerCircleMouseMoveHandler)
             document.body.style.cursor = 'grab';
 
@@ -326,26 +389,22 @@ const drawSectorFieldOnCircle = (props: SectorFieldProps) => {
 
         checkSectorIntersections(sector.id);
 
-        console.log(group.bounds)
-
-        const pivotOrigin = savedCirclePosition;
+        const pivotOrigin = savedPlayerCirclePosition;
         
         const x = savedThroughCirclePosition.x - pivotOrigin.x;
         const y = savedThroughCirclePosition.y - pivotOrigin.y;
-        console.log({x, y}, savedThroughCirclePosition.y)
 
         const targetAngleInRadians = Math.atan2(y, x);
         const targetAngleInDegrees = targetAngleInRadians * (180 / (Math.PI));
 
-        const currentAngle = sector.rotation;
+        const currentAngle = group.rotation;
         const actualTargetAngleInDegrees = targetAngleInDegrees + 90;
 
         const moveByAngle = (actualTargetAngleInDegrees - currentAngle);
 
-        console.log({currentAngle, actualTargetAngleInDegrees, moveByAngle})
-
-        sector.rotate(moveByAngle, pivotOrigin);
         group.rotate(moveByAngle, pivotOrigin);
+        sector.rotate(moveByAngle, pivotOrigin);
+        playerNumber.rotate(-moveByAngle);// Weird
 
         writeVar('currentAngle', currentAngle.toFixed(2));
         writeVar('targetAngleInDegrees', actualTargetAngleInDegrees.toFixed(2));
@@ -362,6 +421,13 @@ const drawSectorFieldOnCircle = (props: SectorFieldProps) => {
         if (hasMouseLeft) {
             document.body.style.cursor = 'default';
 
+            throughCircle.tween({
+                opacity: 0
+            }, {
+                duration: 300,
+                easing: 'easeOutCubic'
+            })
+
             hinterArc.tween({ opacity: 0 },{
                 easing: 'easeOutCubic',
                 duration: 400
@@ -375,9 +441,9 @@ const drawSectorFieldOnCircle = (props: SectorFieldProps) => {
                 duration: 400
             })
         } else {
-            isMouseDown = false;
             document.body.style.cursor = 'grab';
         }
+        isMouseDown = false;
 
         clearVar('currentAngle');
         clearVar('targetAngleInDegrees');
@@ -392,6 +458,7 @@ const drawSectorFieldOnCircle = (props: SectorFieldProps) => {
         document.body.style.cursor = 'default';
 
         if (!isMouseDown) {
+            console.log('tweening back')
             hinterArc.tween({ opacity: 0 },{
                 easing: 'easeOutCubic',
                 duration: 400
@@ -411,8 +478,14 @@ const drawSectorFieldOnCircle = (props: SectorFieldProps) => {
         if (areHandlersDisabled()) return;
         hasMouseLeft = false;
         document.body.style.cursor = 'grab';
+        throughCircle.tween({
+            opacity: 1
+        }, {
+            duration: 300,
+            easing: 'easeOutCubic'
+        })
 
-        hinterArc.strokeColor = new paper.Color('#806c00');
+        hinterArc.strokeColor = new paper.Color('gold');
 
         hinterArc.tween({ opacity: 1 },{
             easing: 'easeOutCubic',
@@ -438,6 +511,27 @@ const drawSectorFieldOnCircle = (props: SectorFieldProps) => {
         document.addEventListener('mouseup', throughCircleDocumentMouseUpHandler)
     }
 
+    sector.onMouseEnter = () => {
+        throughCircle.tween({
+            opacity: 1
+        }, {
+            duration: 300,
+            easing: 'easeOutCubic'
+        })
+    }
+    sector.onMouseLeave = (e: any) => {
+        const point = e.point as paper.Point;
+        console.log({point})
+
+        if (isMouseDown == false) {
+            throughCircle.tween({
+                opacity: 0
+            }, {
+                duration: 300,
+                easing: 'easeOutCubic'
+            })
+        }
+    }
 
     const positionalsButton = document.querySelector('.get-positionals-button') as HTMLButtonElement;
     positionalsButton.addEventListener('click', () => {
@@ -450,51 +544,20 @@ const drawSectorFieldOnCircle = (props: SectorFieldProps) => {
                 x: sector.position.x,
                 y: sector.position.y
             },
-            savedCirclePosition,
+            savedCirclePosition: savedPlayerCirclePosition,
             savedThroughCirclePosition
         })
     })
 
+    checkSectorIntersections(sector.id);
+
     return {
         group,
-        sector,
-        circle: playerCircle
+        savedPlayerCirclePosition,
+        savedThroughCirclePosition
     }
 }
 
-interface DrawPlayerProps {
-    point: paper.Point,
-    radius: number,
-    sectorAngle: number,
-    offense: boolean,
-}
-const drawPlayer = (props: DrawPlayerProps) => {
-    const { point, radius, sectorAngle, offense } = props;
-
-    // Create the circle
-    const circle = new paper.Path.Circle(point, radius);
-    circle.applyMatrix = false; // Enables animations
-
-    if (offense) { // if the player is offense
-        circle.fillColor = new paper.Color(255 / 255, 255 / 255, 255 / 255, 1);
-    } else {
-        circle.fillColor = new paper.Color('#666');
-    }
-    
-    // Create Player Group
-    const playerGroup = new paper.Group([circle]);
-    playerGroup.applyMatrix = false;
-
-    // Define sector options
-    const sectorRadius = 90;
-
-    return drawSectorFieldOnCircle({
-        circle,
-        sectorRadius,
-        sectorAngle,
-        group: playerGroup
-    })
-}
 
 const disableHandlers = $(() => {
     document.body.classList.add('disable-handlers');
@@ -503,36 +566,140 @@ const enableHandlers = $(() => {
     document.body.classList.remove('disable-handlers');
 })
 
+const getRandomInteger = ((min: number, max: number) => {
+    return Math.floor(Math.random() * (max - min + 1) ) + min;
+})
+
 export default component$(() => {
+    interface DrawPlayerProps {
+        point: paper.Point,
+        radius: number,
+        sectorAngle: number,
+        offense: boolean,
+        index: number
+    }
+
+    type PlayerGroupStore = { [index: number]: NoSerialize<paper.Group> }
+
+    const currentPlayerStore = useStore({
+        playerGroups: {} as PlayerGroupStore
+    })
+
+    const drawPlayer = $((props: DrawPlayerProps) => {
+        const { point, radius, sectorAngle, offense, index } = props;
+    
+        // Create the circle
+        const circle = new paper.Path.Circle(point, radius);
+        circle.applyMatrix = false; // Enables animations
+    
+        if (offense) { // if the player is offense
+            circle.fillColor = new paper.Color(255 / 255, 255 / 255, 255 / 255, 1);
+        } else {
+            circle.fillColor = new paper.Color('#1d1d1d');
+        }
+        
+        // Create Player Group
+        const playerGroup = new paper.Group([circle]);
+        playerGroup.applyMatrix = false; 
+    
+        // Define sector options
+        const sectorRadius = 90;
+
+        currentPlayerStore.playerGroups[index] = noSerialize(playerGroup);
+    
+        return drawSectorFieldOnCircle({
+            circle,
+            sectorRadius,
+            sectorAngle,
+            group: playerGroup,
+            offense,
+            index
+        })
+    })
+
     const offenseSectorAngle = useSignal(90);
     const defenseSectorAngle = useSignal(60);
 
     const zoom = useSignal(1);
+    const playerCount = useSignal(0);
+
+    const addOffensePlayer = $(async () => {
+        const canvas = document.querySelector('#canvas') as HTMLCanvasElement;
+
+        const randomPoint = new paper.Point(getRandomInteger(50, canvas.width - 50), getRandomInteger(250, canvas.height - 50));
+
+        drawPlayer({
+            point: randomPoint,
+            radius: 30,
+            sectorAngle: offenseSectorAngle.value,
+            offense: true,
+            index: playerCount.value
+        })
+        playerCount.value++;
+
+        //console.log(paper.project.activeLayer.children)
+    })
+    const addDefensePlayer = $(async () => {
+        const canvas = document.querySelector('#canvas') as HTMLCanvasElement;
+
+        const randomPoint = new paper.Point(getRandomInteger(50, canvas.width - 50), getRandomInteger(250, canvas.height - 50));
+        
+        drawPlayer({
+            point: randomPoint,
+            radius: 30,
+            sectorAngle: offenseSectorAngle.value,
+            offense: false,
+            index: playerCount.value
+        })
+        playerCount.value++;
+    })
+
+    const organizePlayersHandler = $(() => {
+        currentPlayerStore
+    })
+
+    const clearPlayersHandler = $(() => {
+        paper.project.activeLayer.remove();
+
+        const freshLayer = new paper.Layer()
+        paper.project.addLayer(freshLayer);
+        freshLayer.activate();
+
+        playerCount.value = 0;
+    })
 
     useVisibleTask$(() => {
-
         const offenseValue = offenseSectorAngle.value;
         const defenseValue = defenseSectorAngle.value;
+        document.body.style.overflow = 'hidden';
 
         try {
             const canvas = document.querySelector('#canvas') as HTMLCanvasElement;
             if (canvas) {
                 paper.setup(canvas);
                 paper.view.zoom = zoom.value;
+                paper.view.onResize = () => {
+                    canvas.width = document.body.offsetWidth;
+                    canvas.height = (document.body.clientHeight - 1);
+                }
 
                 drawPlayer({
                     point: new paper.Point(paper.view.center.x - 100, canvas.height / 2),
                     radius: 30,
                     sectorAngle: offenseValue,
                     offense: true,
+                    index: playerCount.value
                 })
+                playerCount.value++;
 
                 drawPlayer({
                     point: new paper.Point(paper.view.center.x + 100, canvas.height / 2),
                     radius: 30,
                     sectorAngle: defenseValue,
                     offense: false,
+                    index: playerCount.value
                 })
+                playerCount.value++;
             }
         } catch (error) {
             console.error(error)
@@ -625,6 +792,9 @@ export default component$(() => {
         document.addEventListener('keyup', globalKeyUpHandler);
         document.addEventListener('keydown', globalKeyDownHandler);
         document.addEventListener('wheel', plainWheelHandler);
+
+        //@ts-ignore
+        window.sectorIntersectionAreas = sectorIntersectionAreas;
     })
 
     useTask$(({ track }) => {
@@ -692,8 +862,13 @@ export default component$(() => {
     })
 
     return (
+        <>
+        <script src="https://cdn.jsdelivr.net/npm/paper/dist/paper-full.min.js"></script>
+
         <div class={`sandbox-wrap ${currentMouseTool.value}`}>
-            <canvas id="canvas"></canvas>
+            {//@ts-ignore
+            <canvas id="canvas" resize></canvas>
+            }
             <div class="write-box"></div>
             <div class="sandbox-toolbar-outer">
                 <div class="sandbox-toolbar-inner">
@@ -714,28 +889,37 @@ export default component$(() => {
                             <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="css-i6dzq1"><polyline points="5 9 2 12 5 15"></polyline><polyline points="9 5 12 2 15 5"></polyline><polyline points="15 19 12 22 9 19"></polyline><polyline points="19 9 22 12 19 15"></polyline><line x1="2" y1="12" x2="22" y2="12"></line><line x1="12" y1="2" x2="12" y2="22"></line></svg>
                         </div>
                     </div>
-                    <div class="view-actions">
-                        <div onClick$={() => {
-                            if (zoom.value > 2) return;
-                            zoom.value += 0.1;
-                        }} class={`zoom-in view-action`}>
-                            <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="css-i6dzq1"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line><line x1="11" y1="8" x2="11" y2="14"></line><line x1="8" y1="11" x2="14" y2="11"></line></svg>
-                        </div>
-                        <div onClick$={() => {
-                            if (zoom.value < 0.5) return;
-                            zoom.value -= 0.1;
-                        }} class={`zoom-out view-action`}>
-                            <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="css-i6dzq1"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line><line x1="8" y1="11" x2="14" y2="11"></line></svg>
-                        </div>
-                    </div>
                     <div class="content-control-wrap">
-                        <button class="add-offense-player">Add Offense</button>
-                        <button class="add-offense-player">Add Defense</button>
+                        <button class="add-offense-player" onClick$={addOffensePlayer} >Add Offense</button>
+                        <button class="add-offense-player" onClick$={addDefensePlayer} >Add Defense</button>
+                        <button class="organize-players" onClick$={organizePlayersHandler} >Organize</button>
+                        <button class="clear-players" onClick$={clearPlayersHandler} >Clear</button>
+                    </div>
+                    <div class="positional-control-wrap">
                         <button class="get-positionals-button">Get positionals</button>
                     </div>
                 </div>
             </div>
+
+            <div class="view-actions-wrap">
+                <div class="view-actions">
+                    <div onClick$={() => {
+                        if (zoom.value > 2) return;
+                        zoom.value += 0.1;
+                    }} class={`zoom-in view-action`}>
+                        <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="css-i6dzq1"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line><line x1="11" y1="8" x2="11" y2="14"></line><line x1="8" y1="11" x2="14" y2="11"></line></svg>
+                    </div>
+                    <div onClick$={() => {
+                        if (zoom.value < 0.5) return;
+                        zoom.value -= 0.1;
+                    }} class={`zoom-out view-action`}>
+                        <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="css-i6dzq1"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line><line x1="8" y1="11" x2="14" y2="11"></line></svg>
+                    </div>
+                </div>
+            </div>
         </div>
+
+        </>
     )
 })
 
@@ -749,10 +933,4 @@ export const head = () => {
             },
         ],
     };
-} */
-
-import { component$ } from '@builder.io/qwik'
-
-export default component$(() => {
-    return <></>
-})
+}

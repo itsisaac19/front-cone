@@ -8,6 +8,8 @@ body {
   font-family: Satoshi;
   background: black;
   margin: 0;
+
+  min-height: 100dvh;
 }
 html, body {
 
@@ -248,6 +250,7 @@ body:has(.hamburger.open) {
 /*HOME*/
 .dashboard-outer {
   display: grid;
+  height: max-content;
 }
 .dashboard-inner {
   display: grid;
@@ -2224,16 +2227,20 @@ canvas.select {
   position: relative;
 
   display: grid;
-  grid-template-columns: max-content max-content max-content max-content;
+  grid-template-columns: max-content 1fr max-content;
+  grid-template-rows: 60px;
 
-  border-bottom: 1px solid #292929;
+  column-gap: 20px;
 
   user-select: none;
 }
+
 .mouse-tools {
   display: grid;
   grid-template-columns: 1fr 1fr;
   background: #000000;
+  border-bottom: 1px solid #292929;
+  border-right: 1px solid #292929;
 }
 .mouse-tool {
   cursor: pointer;
@@ -2253,27 +2260,28 @@ canvas.select {
 .mouse-tool.active svg {
   color: #fff;
 }
+.view-actions-wrap {
+  position: absolute;
+  right: 0;
+  bottom: 0px;
+}
 .view-actions {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  column-gap: 10px;
-  padding: 5px 10px;
+  column-gap: 0px;
 
   background: #000000;
 }
 .view-action {
   cursor: pointer;
-  border-radius: 6px;
-  border: 1px solid #292929;
   display: grid;
   padding: 5px 10px;
+  border-top: 1px solid #292929;
+  border-left: 1px solid #292929;
 
-  background: #1d1d1d;
+  background: #000000;
 
   color: #666;
-}
-.view-action:first-child {
-  border-left: none;
 }
 .view-action:hover {
   color: #fff;
@@ -2286,61 +2294,90 @@ canvas.select {
 }
 .content-control-wrap {
   display: grid;
-  grid-auto-flow: column;
-  padding: 8px 13px;
-  column-gap: 10px;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  column-gap: 4px;
   background-color: black;
-}
+  padding: 4px 4px;
+  row-gap: 4px;
 
+  border: 1px solid #292929;
+  border-top: none;
+}
+@media screen and (max-width: 950px) {
+  .sandbox-toolbar-inner {
+    grid-template-columns: 1fr;
+    grid-template-rows: 60px auto;
+  }
+  .content-control-wrap {
+    border-left: none;
+    border-right: none;
+  }
+}
 .add-offense-player {
   all: unset;
-  cursor: pointer;
-  color: #ffffff;
-  padding: 7px 12px;
-  background: #252525;
+}
+.organize-players {
+  all: unset;
+  display: none;
+}
+.clear-players {
+  all: unset;
+}
+.get-positionals-button {  
+  all: unset;
+  display: none;
+}
+
+.content-control-wrap > * {
+  background: #1b1b1b;
+  padding: 10px 16px;
+  margin: 0px 0;
   text-align: center;
   font-variation-settings: 'wght' 500;
   font-size: 14px;
+  cursor: pointer;
+  color: #ffffff;
+  
+  width: auto;
+  height: auto;
+  transition: background 0.3s ease, color 0.3s ease, opacity 0.3s ease, border 0.3s ease;
+} 
+.content-control-wrap > *:hover {
+  background: #252525;
+} 
+.content-control-wrap > *:focus {
+  background: #3f3f3f;
+}
+
+.positional-control-wrap {
+  display: grid;
+  grid-template-columns: auto;
+  column-gap: 4px;
+  background-color: black;
+  padding: 4px 4px;
+  row-gap: 4px;
+
+  border: 1px solid #292929;
+  border-top: none;
+  border-right: none;
+}
+.get-positionals-button {
+  background: #1b1b1b;
+  padding: 10px 16px;
+  margin: 0px 0;
+  text-align: center;
+  font-variation-settings: 'wght' 500;
+  font-size: 14px;
+  cursor: pointer;
+  color: #ffffff;
+  
   width: auto;
   height: auto;
   transition: background 0.3s ease, color 0.3s ease, opacity 0.3s ease, border 0.3s ease;
 }
 
-.get-positionals-button {  
-  all: unset;
-  font-family: inherit;
-
-  cursor: pointer;
-  color: #ffffff;
-
-  padding: 7px 12px;
-  background: #252525;
-
-
-  margin: auto 0px 0px 0px;
-  text-align: center;
-  font-variation-settings: 'wght' 500;
-  font-size: 14px;
-
-  width: auto;
-  height: max-content;
-
-  transition: background 0.3s ease, color 0.3s ease, opacity 0.3s ease, border 0.3s ease;
-}
-
-.content-control-wrap > * {
-  border-radius: 8px;
-  border: 2px solid #373737;
-}
-.content-control-wrap > *:hover {
-  background: #1b1b1b;
-  border-color: #585858;
-} 
-.content-control-wrap > *:focus {
-  background: #252525;
-  border-color: #585858;
-}
-
-.sandbox-toolbar-inner > * {
-  border-right: 1px solid #292929;
+img.server-test {
+  position: absolute;
+  z-index: 10;
+  background: gray;
 }

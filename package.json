@@ -55,10 +55,12 @@
     "@supabase/auth-ui-shared": "^0.1.6",
     "@supabase/supabase-js": "^2.25.0",
     "animejs": "^3.2.1",
+    "canvas": "^2.11.2",
     "dayjs": "^1.11.8",
     "nanoid": "^4.0.2",
     "nprogress": "^0.2.0",
     "paper": "^0.12.17",
+    "paper-jsdom-canvas": "^0.12.17",
     "web-push": "^3.6.3"
   }
 }
