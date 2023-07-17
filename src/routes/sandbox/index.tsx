@@ -80,7 +80,8 @@ const drawSectorFieldOnCircle = (props: SectorFieldProps) => {
 
     const throughCircle = new paper.Path.Circle(through.add(new paper.Point(0, 0)), 10);
     throughCircle.strokeWidth = 2;
-    throughCircle.fillColor = new paper.Color('gold');
+    if (!offense) throughCircle.strokeColor = new paper.Color('#ededed');
+    throughCircle.fillColor = offense ? new paper.Color('#fff') : new paper.Color('#000');
     throughCircle.opacity = 0;
 
     const end = new paper.Point(
@@ -91,7 +92,9 @@ const drawSectorFieldOnCircle = (props: SectorFieldProps) => {
     
     const sector = Object.assign(new paper.Path.Arc(start, through, end), {
         applyMatrix: false,
-        fillColor: new paper.Color(0.1, 0.1, 0.1, 1)
+        fillColor: new paper.Color(0.1, 0.1, 0.1, 0),
+        strokeWidth: 2,
+        strokeColor: new paper.Color('#1d1d1d')
     });
     sector.lineTo(center);
     sector.lineTo(start);
@@ -256,17 +259,35 @@ const drawSectorFieldOnCircle = (props: SectorFieldProps) => {
             if (sector.intersects(savedSector)) {
                 atLeastOneIntersection = true;
                 const area = sector.intersect(savedSector);
-                area.fillColor = new paper.Color('#EECD2Cad');
+                const areaFillColor = new paper.Color('#EECD2Cad');
+                area.fillColor = areaFillColor;
+
+                area.onMouseEnter = () => {
+                    throughCircle.tween({
+                        opacity: 1
+                    }, {
+                        duration: 300,
+                        easing: 'easeOutCubic'
+                    })
+                }
+                area.onMouseLeave = () => {
+                    throughCircle.tween({
+                        opacity: 0
+                    }, {
+                        duration: 300,
+                        easing: 'easeOutCubic'
+                    })
+                }
                 
                 //console.log(`tweening ${sector.id} && ${savedSector.id}`)
                 sector.tween({
-                    fillColor: new paper.Color('#474747')
+                    strokeColor: new paper.Color('#666')
                 }, {
                     duration: 300,
                     easing: 'easeOutCubic'
                 })
                 savedSector.tween({
-                    fillColor: new paper.Color('#474747')
+                    strokeColor: new paper.Color('#666')
                 }, {
                     duration: 300,
                     easing: 'easeOutCubic'
@@ -301,7 +322,8 @@ const drawSectorFieldOnCircle = (props: SectorFieldProps) => {
             } else {
                 //console.log(savedSector.id, ' is not being intersected by anyone.')
                 savedSector.tween({
-                    fillColor: new paper.Color(0.1, 0.1, 0.1, 1)
+                    fillColor: new paper.Color(0.1, 0.1, 0.1, 0),
+                    strokeColor: new paper.Color('#1d1d1d')
                 }, {
                     duration: 300,
                     easing: 'easeOutCubic'
@@ -313,7 +335,8 @@ const drawSectorFieldOnCircle = (props: SectorFieldProps) => {
             delete sectorIntersectionAreas[sector.id];
             //console.log(`tweening ${sector.id} (author) back to normal`)
             sector.tween({
-                fillColor: new paper.Color(0.1, 0.1, 0.1, 1)
+                fillColor: new paper.Color(0.1, 0.1, 0.1, 0),
+                strokeColor: new paper.Color('#1d1d1d')
             }, {
                 duration: 300,
                 easing: 'easeOutCubic'
@@ -708,6 +731,7 @@ export default component$(() => {
 
         const plainWheelHandler = (e: WheelEvent) => {
             if (e.ctrlKey) {
+                e.preventDefault();
                 e.stopPropagation();
                 if (paper.view) {
                     if (e.deltaY < 0) {
@@ -791,7 +815,9 @@ export default component$(() => {
 
         document.addEventListener('keyup', globalKeyUpHandler);
         document.addEventListener('keydown', globalKeyDownHandler);
-        document.addEventListener('wheel', plainWheelHandler);
+        document.addEventListener('wheel', plainWheelHandler, {
+            passive: false
+        });
 
         //@ts-ignore
         window.sectorIntersectionAreas = sectorIntersectionAreas;
