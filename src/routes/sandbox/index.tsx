@@ -92,7 +92,7 @@ const drawSectorFieldOnCircle = (props: SectorFieldProps) => {
     
     const sector = Object.assign(new paper.Path.Arc(start, through, end), {
         applyMatrix: false,
-        fillColor: new paper.Color(0.1, 0.1, 0.1, 0),
+        fillColor: new paper.Color(0, 0, 0, 0),
         strokeWidth: 2,
         strokeColor: new paper.Color('#1d1d1d')
     });
@@ -322,7 +322,7 @@ const drawSectorFieldOnCircle = (props: SectorFieldProps) => {
             } else {
                 //console.log(savedSector.id, ' is not being intersected by anyone.')
                 savedSector.tween({
-                    fillColor: new paper.Color(0.1, 0.1, 0.1, 0),
+                    fillColor: new paper.Color(0, 0, 0, 1),
                     strokeColor: new paper.Color('#1d1d1d')
                 }, {
                     duration: 300,
@@ -335,7 +335,7 @@ const drawSectorFieldOnCircle = (props: SectorFieldProps) => {
             delete sectorIntersectionAreas[sector.id];
             //console.log(`tweening ${sector.id} (author) back to normal`)
             sector.tween({
-                fillColor: new paper.Color(0.1, 0.1, 0.1, 0),
+                fillColor: new paper.Color(0, 0, 0, 1),
                 strokeColor: new paper.Color('#1d1d1d')
             }, {
                 duration: 300,
