@@ -55,6 +55,7 @@ export const TimeStartPicker = qwikify$<TimePickerProps>((props) => {
                         borderColor:'#414141'
                     }
                 }}
+                key={'start-picker-key'}
                 maxTime={dayjs(endTime, 'hh:mm A')}  
                 />
             </LocalizationProvider>
@@ -87,6 +88,7 @@ export const TimeEndPicker = qwikify$<TimePickerProps>((props) => {
                     },
                     width: 'auto'
                 }}  
+                key={'end-picker-key'}
                 minTime={dayjs(startTime, 'hh:mm A')}  
                 />
             </LocalizationProvider>

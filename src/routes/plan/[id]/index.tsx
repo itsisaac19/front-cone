@@ -2,7 +2,7 @@ import { $, component$, useComputed$, useSignal, useStore, useTask$, useVisibleT
 
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from '~/supabase';
-import { type DocumentHead, routeLoader$, server$, useLocation, Link } from '@builder.io/qwik-city';
+import { type DocumentHead, routeLoader$, useLocation, Link } from '@builder.io/qwik-city';
 import { TimeEndPicker, TimeStartPicker } from '~/components/dating';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
@@ -18,10 +18,26 @@ const supabase = createClient('https://mockfcvyjtpqnpctspcq.supabase.co', 'eyJhb
     }
 });
 
+export const useInitialLoader = routeLoader$(async ({ cookie, redirect, params, pathname }) => {
+    const accessToken = cookie.get('my-access-token')?.value;
+    const refreshToken = cookie.get('my-refresh-token')?.value;
+
+    if (accessToken && refreshToken) {
+        console.log('setting session')
+        supabase.auth.setSession({
+            access_token: accessToken, 
+            refresh_token: refreshToken
+        })
+    }
+    
+    if (!accessToken || !refreshToken) {
+        console.log('No cookie found:', cookie)
+        throw redirect(302, `/share/${params.id}`);
+    } 
 
 
-export const usePlan = routeLoader$(async (requestEvent) => {
-    const planUUID = requestEvent.params.id;
+    const planUUID = params.id;
+    let plan: { data: PlanRow | null, path: string } = { data: null, path: '' };
 
     if (planUUID) {
         const { data, error } = await supabase
@@ -32,35 +48,19 @@ export const usePlan = routeLoader$(async (requestEvent) => {
         }
 
         const response = data as any as PlanRow[];
-        const plan = response[0]
 
-        return {
-            data: plan, 
-            path: requestEvent.pathname
+        plan = {
+            data: response[0], 
+            path: pathname
         };
     }
 
-})
-
-export const useUserDrills = routeLoader$(async (requestEvent) => {
-    const userid = requestEvent.cookie.get('userid')?.value;
-
-    if (userid) {
-        const { data, error } = await supabase
-        .from('drills').select().eq('user_id', userid);
-    
-        if (error) {
-            return null;
-        }
-
-        const drills = data as any as Partial<DrillRow>[];
-    
-        return drills;
-    } else {
-        return [];
+    return {
+        refreshToken,
+        accessToken,
+        plan
     }
-})
-
+}) 
 
 const savePlanToDatabase = async (planData: any) => {
     const { data, error } = await supabase
@@ -140,41 +140,6 @@ import { AuthBanner } from '~/components/auth-banner';
 import { NotificationSwitch } from '~/components/notification';
 
 
-const detect = server$(() => {
-    supabase.auth.onAuthStateChange(async (event) => {
-        if (event == 'SIGNED_IN') {
-            
-            //const session = await supabase.auth.getSession();
-            //console.log({session})
-            //console.log('Authenticated User:', session?.user)
-        }
-    })
-})
-
-export const useTokens = routeLoader$(({ cookie, redirect, params }) => {
-    const accessToken = cookie.get('my-access-token')?.value;
-    const refreshToken = cookie.get('my-refresh-token')?.value;
-
-    if (accessToken && refreshToken) {
-        console.log('setting session')
-        supabase.auth.setSession({
-            access_token: accessToken, 
-            refresh_token: refreshToken
-        })
-    }
-    
-    if (!accessToken || !refreshToken) {
-        console.log('No cookie found:', cookie)
-        throw redirect(302, `/share/${params.id}`);
-        return;
-    } 
-
-    return {
-        refreshToken,
-        accessToken
-    }
-})
-
 const getDrillIndex = (drillUUID?: string) => {
     const wrapper = (document.querySelector('.creation-grid') as HTMLElement);
     const numberOfDrills = wrapper.children.length;
@@ -189,21 +154,6 @@ const getDrillIndex = (drillUUID?: string) => {
         return numberOfDrills; // Could be 0
     }
 }
-
-/* const pushChannel = supabase.channel('push-notifications', {
-    config: {
-        broadcast: {
-            self: true
-        }
-    }
-}); */
-/* pushChannel.on('broadcast', { event: 'drill-starting' }, (payload) => {
-    console.groupCollapsed('DRILL-STARTING');
-    console.log({payload});
-    
-
-    console.groupEnd()
-}) */
 
 
 export type NotificationPayloadType = {
@@ -294,14 +244,13 @@ const globalPrefersReducedMotion = useSignal(false);
             overlay?.classList.remove('show-grid');
         }, 300)
     })
-    
-    const tokens = useTokens();
-    detect();
 
-    const plan = usePlan();
+    const loader = useInitialLoader();
+    if (!loader.value) throw new Error('loader is empty');
+    const { plan, accessToken, refreshToken } = loader.value;
 
     const currentPlanData = useStore({
-        value: plan.value?.data as Partial<PlanRow>,
+        value: plan.data as Partial<PlanRow>,
     })
     const currentDrillData = useStore({
         value: {} as Partial<DrillRow>,
@@ -325,23 +274,7 @@ const globalPrefersReducedMotion = useSignal(false);
         }
     })
 
-    const { url }  = useLocation();
-    const liveParam = url.searchParams.get('live');
 
-    useVisibleTask$(() => {
-
-        if (liveParam && liveParam === '1') {
-            if (currentPlanData.value.status != 'live') {
-                url.searchParams.delete('live');
-                window.history.replaceState({}, '', url)
-
-                console.log('auto-running live via "live=1" in url.');
-                currentPlanData.value.status = 'live';
-                savePlanHandler();
-
-            }
-        }
-    })
 
     const realTimeEvent = useStore({} as any);
 
@@ -360,7 +293,7 @@ const globalPrefersReducedMotion = useSignal(false);
             console.log(`Change is MINE: `, {eventData});
         }
         
-        const userid = plan.value?.data?.user_id;
+        const userid = plan.data?.user_id;
 
         if (userid) {
             const { data, error } = await supabase
@@ -382,7 +315,7 @@ const globalPrefersReducedMotion = useSignal(false);
 
     const planDrills = useComputed$(() => {
         const initial = userDrills.value?.filter(drill => {
-            return drill.plan_uuid == plan.value?.data.uuid;
+            return drill.plan_uuid == plan.data?.uuid;
         }) || [];
         return initial; 
     })
@@ -475,7 +408,7 @@ const globalPrefersReducedMotion = useSignal(false);
     const currentUserEmail = useSignal('')
 
     const getNotificationState = useComputed$(() => {
-        const state = plan.value?.data.notifications ?? false;
+        const state = plan.data?.notifications ?? false;
         return state;
     })
 
@@ -486,14 +419,14 @@ const globalPrefersReducedMotion = useSignal(false);
         const registration = await navigator.serviceWorker.getRegistration();
         
         if (registration) {
-            if (!plan.value || !planDrills.value) {
+            if (!plan.data || !planDrills.value) {
                 console.error('cannot initialize. @ !plan.value || !planDrills.value')
             } else if (registration.active) {
                 console.log('postMessage (init-check) from startNotificationChecking')
                 registration.active.postMessage({
                     type: 'init-check',
                     drills: planDrills.value,
-                    planUUID: plan.value.data.uuid,
+                    planUUID: plan.data?.uuid,
                 })
             }
         }
@@ -503,13 +436,13 @@ const globalPrefersReducedMotion = useSignal(false);
         const registration = await navigator.serviceWorker.getRegistration();
         
         if (registration) {
-            if (!plan.value || !planDrills.value) {
+            if (!plan.data || !planDrills.value) {
                 console.error('cannot initialize. @ !plan.value || !planDrills.value')
             } else if (registration.active) {
                 registration.active.postMessage({
                     type: 'stop-check',
                     drills: planDrills.value,
-                    planUUID: plan.value.data.uuid,
+                    planUUID: plan.data.uuid,
                 })
             }
         }
@@ -571,14 +504,34 @@ const globalPrefersReducedMotion = useSignal(false);
         runPlanButtonText.value = 'Run Live';
     });
 
+    const { url }  = useLocation();
+    const liveParam = url.searchParams.get('live');
+
+    const shareURL = useSignal('');
+    const copyText = useSignal('Copy');
+
     useVisibleTask$(async () => {
-        if (tokens.value?.accessToken && tokens.value?.refreshToken) {
+        shareURL.value = `${window.location.host}/share/${plan.data?.uuid}`;
+
+        if (liveParam && liveParam === '1') {
+            if (currentPlanData.value.status != 'live') {
+                url.searchParams.delete('live');
+                window.history.replaceState({}, '', url)
+
+                console.log('auto-running live via "live=1" in url.');
+                currentPlanData.value.status = 'live';
+                savePlanHandler();
+
+            }
+        }
+
+        if (accessToken && refreshToken) {
             const existing = await supabase.auth.getSession();
 
             if (!existing.data.session) {
                 console.error('Existing session does not exist')
-                if (plan.value) {
-                    location.assign(`/share/${plan.value?.data.uuid}`)
+                if (plan.data) {
+                    location.assign(`/share/${plan.data.uuid}`)
                 } else {
                     location.assign(`/`)
                 }
@@ -588,9 +541,9 @@ const globalPrefersReducedMotion = useSignal(false);
                     currentUserEmail.value = existing.data.session.user.email;
                 }
 
-                if (plan.value && existing.data.session.user.id != plan.value.data.user_id) {
+                if (plan.data && existing.data.session.user.id != plan.data.user_id) {
                     console.log('NOT MY PLAN!')
-                    location.assign(`/share/${plan.value.data.uuid}`)
+                    location.assign(`/share/${plan.data.uuid}`)
                 }
             } 
 
@@ -614,7 +567,7 @@ const globalPrefersReducedMotion = useSignal(false);
 
                 if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
                     const userid = (payload.new as DrillRow).user_id;
-                    if (plan.value?.data.user_id && plan.value.data.user_id == userid) {
+                    if (plan.data?.user_id && plan.data.user_id == userid) {
                         realTimeEvent.value = payload;
                     } else {
                         console.log(`Change is NOT mine: `, payload.eventType);
@@ -633,7 +586,7 @@ const globalPrefersReducedMotion = useSignal(false);
                 if (payload.eventType === 'UPDATE') {
                     const userid = (payload.new as DrillRow).user_id;
                     console.log('update plan', {userid})
-                    if (plan.value?.data.user_id && plan.value.data.user_id == userid) {
+                    if (plan.data?.user_id && plan.data.user_id == userid) {
                         if (payload.new.status != currentPlanData.value.status) {
                             runPlanHandler();
                         }
@@ -791,9 +744,9 @@ const globalPrefersReducedMotion = useSignal(false);
 
         console.log('Saving:', {drillData});
 
-        drillData.user_id = plan.value?.data.user_id;
-        drillData.user_email = plan.value?.data.user_email;
-        drillData.plan_uuid = plan.value?.data.uuid;
+        drillData.user_id = plan.data?.user_id;
+        drillData.user_email = plan.data?.user_email;
+        drillData.plan_uuid = plan.data?.uuid;
         drillData.updated_at = dayjs().format();
 
         if (!drillData.time_start) {
@@ -1087,7 +1040,7 @@ const globalPrefersReducedMotion = useSignal(false);
     const deletePlanHandler = $(async (e: any) => {
         const button = e.target as HTMLElement;
         button.classList.add('deleting');
-        const planUUID = plan.value?.data.uuid;
+        const planUUID = plan.data?.uuid;
         console.log({ planUUID });
 
         if (planUUID) {
@@ -1119,20 +1072,14 @@ const globalPrefersReducedMotion = useSignal(false);
 
     
 
-    const shareURL = useSignal('');
 
-    const copyText = useSignal('Copy');
-
-    useVisibleTask$(() => {
-        shareURL.value = `${window.location.host}/share/${plan.value?.data.uuid}`;
-    })
 
     const sharePlanHandler = $(async () => {
-        if (plan.value?.data.uuid) {
+        if (plan.data?.uuid) {
             const shareData = {
                 title: 'Front Cone',
-                text: plan.value?.data.title || 'Untitled',
-                url: `${window.location.origin}/share/${plan.value?.data.uuid}`,
+                text: plan.data?.title || 'Untitled',
+                url: `${window.location.origin}/share/${plan.data?.uuid}`,
             };
 
             try {
@@ -1144,8 +1091,8 @@ const globalPrefersReducedMotion = useSignal(false);
         }
     })
     const copyLinkHandler = $(async () => {
-        if (plan.value?.data.uuid) {
-            const url = `${window.location.origin}/share/${plan.value?.data.uuid}`;
+        if (plan.data?.uuid) {
+            const url = `${window.location.origin}/share/${plan.data?.uuid}`;
 
             try {
                 await navigator.clipboard.writeText(url);
@@ -1160,6 +1107,12 @@ const globalPrefersReducedMotion = useSignal(false);
     })
 
     const expandList = useSignal(false);
+
+    const expandCurrentLiveDrillBox = $((e: any) => {
+        console.log(e)
+        const button = e.target as HTMLElement;
+        button.parentElement?.classList.toggle('expand');
+    })
 
     const expandDrillLibraryList = $(() => {
         expandList.value = !expandList.value;
@@ -1202,9 +1155,6 @@ const globalPrefersReducedMotion = useSignal(false);
 
     const isPWA = useSignal(false);
 
-
-
-
     useVisibleTask$(async () => {
         let displayMode = 'browser tab';
         if (window.matchMedia('(display-mode: standalone)').matches) {
@@ -1215,7 +1165,7 @@ const globalPrefersReducedMotion = useSignal(false);
         console.log('DISPLAY_MODE_LAUNCH:', displayMode);
 
 
-        if (plan.value?.data.status == 'live') {
+        if (plan.data?.status == 'live') {
             runPlanHandler();
         }
 
@@ -1227,18 +1177,12 @@ const globalPrefersReducedMotion = useSignal(false);
         }, 1000)
     });
 
-    const expandCurrentLiveDrillBox = $((e: any) => {
-        console.log(e)
-        const button = e.target as HTMLElement;
-        button.parentElement?.classList.toggle('expand');
-    })
-
 
     return (
     <div>
-        {plan.value ? <Navbar path={plan.value.path} planData={currentPlanData.value} currentEmail={currentUserEmail.value} /> : <></>}
+        {plan.path ? <Navbar path={plan.path} planData={currentPlanData.value} currentEmail={currentUserEmail.value} /> : <></>}
 
-        {plan.value ? <AuthBanner accessString={'Editing'} planData={currentPlanData.value} currentEmail={currentUserEmail.value} /> : <></>}
+        {plan.path ? <AuthBanner accessString={'Editing'} planData={currentPlanData.value} currentEmail={currentUserEmail.value} /> : <></>}
         
         <div class="create-plan-wrap">
             <div class="meta-actions-outer">
@@ -1383,6 +1327,7 @@ const globalPrefersReducedMotion = useSignal(false);
                                 class="plan-title-input" 
                                 type="text" 
                                 value={currentPlanData.value.title || ''}
+                                name="plan-title-input"
                             />
                             <div class="description-label">Description</div>
                             <input 
@@ -1393,6 +1338,7 @@ const globalPrefersReducedMotion = useSignal(false);
                                 class="plan-description-input" 
                                 type="text" 
                                 value={currentPlanData.value.description || ''}
+                                name="plan-description-input"
                             />
 
                             <div class="meta-plan-switches">
@@ -1401,7 +1347,7 @@ const globalPrefersReducedMotion = useSignal(false);
                                         <div class="plan-notification-label">Notifications</div>
                                         <div class="plan-notification-description">Enables push notifications for time sensitive events. </div>
                                     </div>
-                                    {/* <input class="notif-switch" onClick$={notificationTestHandler} checked={plan.value?.data ? true : false} type="checkbox" /> */}
+                                    {/* <input class="notif-switch" onClick$={notificationTestHandler} checked={plan.data? ? true : false} type="checkbox" /> */}
                                     <NotificationSwitch checkedState={notificationCheckedState.value} changeHandler={notificationChangeHandler} pwa={isPWA.value} client:load />
                                     <div class="plan-notification-example">
                                         <div class="example"></div>
@@ -1435,7 +1381,7 @@ const globalPrefersReducedMotion = useSignal(false);
                             }</div>
                             
                             <div class="title-label">Title</div>
-                            <input class="drill-title-input" type="text" value={currentDrillData.value.title || ''}
+                            <input name="drill-title-input" class="drill-title-input" type="text" value={currentDrillData.value.title || ''}
                             onInput$={(e) => {
                                 const titleString = (e.target as HTMLInputElement).value;
                                 currentDrillData.value.title = titleString;
@@ -1443,6 +1389,7 @@ const globalPrefersReducedMotion = useSignal(false);
                             />
                             <div class="description-label">Description</div>
                             <textarea
+                            name='description-textarea'
                             onInput$={(e) => {
                                 const input = (e.target as HTMLInputElement);
                                 const value = input.value;
@@ -1454,13 +1401,13 @@ const globalPrefersReducedMotion = useSignal(false);
                             class="drill-description-input"  value={currentDrillData.value.description || ''} />
 
                             <div class="drill-dating">
-                                    <div class="drill-time-start">
+                                    <form class="drill-time-start">
                                         <TimeStartPicker endTime={currentDrillData.value.time_end} inputHandler={pickerStartHandler}
                                         value={currentDrillData.value.time_start} client:load />
-                                    </div>
-                                    <div class="drill-time-end">
+                                    </form>
+                                    <form class="drill-time-end">
                                         <TimeEndPicker startTime={currentDrillData.value.time_start} inputHandler={pickerEndHandler} value={currentDrillData.value.time_end} client:load />
-                                    </div> 
+                                    </form> 
                             </div>
 
                             <button class="creation-save-button" onClick$={saveDrillHandler}>{
@@ -1490,13 +1437,13 @@ const globalPrefersReducedMotion = useSignal(false);
 
 
 export const head: DocumentHead = ({resolveValue}) => {
-    const planTitle = resolveValue(usePlan);
+    const loader = resolveValue(useInitialLoader);
     return {
-        title: `${planTitle?.data.title || 'Untitled'} | Front Cone`,
+        title: `${loader?.plan.data?.title || 'Untitled'} | Front Cone`,
         meta: [
             {
                 name: 'description',
-                content: planTitle?.data.description || 'No description',
+                content: loader?.plan.data?.description || 'No description',
             },
         ],
     };
