@@ -608,10 +608,10 @@ const getRandomInteger = ((min: number, max: number) => {
     return Math.floor(Math.random() * (max - min + 1) ) + min;
 })
 
-const removePlayer = $((playerItems: paper.Item[]) => {
+/* const removePlayer = $((playerItems: paper.Item[]) => {
     const trashLayer = paper.project.layers.find(layer => layer.name == 'trash');
     trashLayer?.addChildren(playerItems);
-}) 
+})  */
 
 const findLayer = $((layerName: string) => {
     const found = paper.project.layers.find(layer => layer.name === layerName);
