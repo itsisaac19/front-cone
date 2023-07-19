@@ -322,8 +322,22 @@ const globalPrefersReducedMotion = useSignal(false);
     const runPlanButtonText = useSignal('Run Live');
     const isPlanLive = useSignal(false);
 
-    const adjustLiveBar = $((action: 'show' | 'hide') => {
+    const transition = useComputed$(() => {
+        const isLive = isPlanLive.value;
+        const timeout = new Promise((resolve) => setTimeout(resolve, 800));
+
+        return {
+            isLive,
+            timeout
+        }
+    })
+
+    const adjustLiveBar = $(async (action: 'show' | 'hide') => {
         if (runPlanButtonText.value === 'Run Live') return;
+
+        if (transition.value.isLive) {
+            await transition.value.timeout;
+        }
 
         const findBestMatch = (drills: Partial<DrillRow>[]) => {
             let bestMatch: Partial<DrillRow> = {};
@@ -1170,8 +1184,8 @@ const globalPrefersReducedMotion = useSignal(false);
         }
 
         setInterval(() => {
-            adjustLiveBar('show');
             checkDrillTimes();
+            adjustLiveBar('show');
             
             liveMetaStore.currentTime = dayjs().format('h:mm:ss A');
         }, 1000)
@@ -1370,7 +1384,7 @@ const globalPrefersReducedMotion = useSignal(false);
                             <div class="exit-edit-meta-form" onClick$={() => {
                                 hideOverlayHandler();
                             }}>← Go back</div>
-                            <button class={`creation-delete-button ${currentDrillData.value.created_at ? 'show' : ''}`} onClick$={deleteDrillHandler}>Delete Drill</button>
+                            <button class={`creation-delete-button ${showOverlay.actionString == 'Edit' ? 'show' : ''}`} onClick$={deleteDrillHandler}>Delete Drill</button>
                         </div>
                         <div class="drill-edit-meta-form-data">
                             <div class="drill-edit-title">

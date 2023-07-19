@@ -1092,7 +1092,7 @@ ul.breadcrumb li a:hover {
   grid-template-rows: max-content 1fr;
 
   background: #3d3d3d00;
-  color: #3d3d3d;
+  color: #121212;
   transition: background 0.3s ease;
 }
 .live-current-drill-wrap span {
@@ -1108,7 +1108,7 @@ ul.breadcrumb li a:hover {
   gap: 2px;
 
   background: #3d3d3d00;
-  color: #3d3d3d;
+  color: #1d1d1d;
   transition: background 0.3s ease;
 }
 .live-timeline-meta span {
@@ -1236,7 +1236,7 @@ ul.breadcrumb li a:hover {
 }
 .current-live-drill-count {
   margin: 0 0 0 15px;
-  border: 2px solid #1d1d1d;
+  border: 2px solid #1d1d1d00;
   border-radius: 8px;
 
   font-size: 14px;
@@ -1246,6 +1246,10 @@ ul.breadcrumb li a:hover {
 
   display: grid;
   place-items: center;
+  transition: color 0.3s ease, background 0.3s ease, border 0.3s ease;
+}
+.live .current-live-drill-count {
+  border: 2px solid #1d1d1d;
 }
 .live-current-drill-label svg {
   cursor: pointer;
@@ -2177,6 +2181,9 @@ body.requesting .meta-plan-notifications > qwik-react > span {
 
 
 /* sandbox */
+body[theme="light"] {
+  background: white;
+}
 .sandbox-wrap {
   margin: 0px;
   display: grid;
@@ -2229,12 +2236,18 @@ canvas.select {
   grid-template-columns: max-content 1fr max-content;
   grid-template-rows: 50px;
 
+  background: black;
+
   padding: 10px;
 
   column-gap: 20px;
 
   user-select: none;
 }
+[theme="light"] .sandbox-toolbar-inner {
+  border-bottom: 1px solid #e3e3e3;
+  background: rgb(255, 255, 255);
+} 
 
 .mouse-tools {
   display: grid;
@@ -2244,12 +2257,18 @@ canvas.select {
   column-gap: 5px;
   width: max-content;
 }
+[theme="light"] .mouse-tools {
+  background: #e3e3e300;
+}
 .mouse-tool {
   border-radius: 8px;
   cursor: pointer;
   background: #2d2d2d;
   width: 40px;
   display: grid;
+}
+[theme="light"] .mouse-tool {
+  background: #e3e3e3;
 }
 .mouse-tool:first-child {
   border-left: none;
@@ -2260,8 +2279,14 @@ canvas.select {
 
   transition: color 0.3s ease;
 }
+[theme="light"] .mouse-tool svg {
+  color: #9c9c9c;
+}
 .mouse-tool.active svg {
   color: #fff;
+}
+[theme="light"] .mouse-tool.active svg {
+  color: #000000;
 }
 .view-actions-wrap {
   position: absolute;
@@ -2322,6 +2347,9 @@ canvas.select {
   background: #2c2a23;
   margin: 0 0 0 20px;
 }
+[theme="light"] .organize-players {
+  background: #e3e3e3;
+}
 @media screen and (max-width: 950px) {
   .sandbox-toolbar-inner {
     grid-template-columns: max-content minmax(0, 1fr );
@@ -2341,13 +2369,23 @@ canvas.select {
   all: unset;
   background: #1b1b1b;
 }
+[theme="light"] .add-offense-player {
+  background: #e3e3e3;
+}
 
 .clear-players {
   all: unset;
   background: #2c2a23;
 }
+[theme="light"] .clear-players {
+  background: #e3e3e3;
+}
 .get-positionals-button {  
   all: unset;
+}
+[theme="light"] .get-positionals-button {
+  background: #e3e3e3;
+  color: black;
 }
 
 .content-control-wrap > * {
@@ -2363,6 +2401,10 @@ canvas.select {
   height: auto;
   transition: background 0.3s ease, color 0.3s ease, opacity 0.3s ease, border 0.3s ease;
 } 
+
+[theme="light"] .content-control-wrap > * {
+  color: #000000;
+}
 .content-control-wrap > *:hover {
   background: #252525;
 } 

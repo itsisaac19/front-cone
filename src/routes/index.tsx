@@ -1,6 +1,6 @@
 //@ts-nocheck
 import { component$, useVisibleTask$ } from '@builder.io/qwik';
-import { type DocumentHead } from '@builder.io/qwik-city';
+import { useLocation, type DocumentHead } from '@builder.io/qwik-city';
 import { createClient } from '@supabase/supabase-js';
 import { SupabaseAuth } from '~/components/supabase-auth';
 
@@ -11,30 +11,44 @@ const supabase = createClient('https://mockfcvyjtpqnpctspcq.supabase.co', 'eyJhb
 });
 
 export default component$(() => {
-  //const hash = useHash();
+  const { url } = useLocation();
 
-    useVisibleTask$(() => {
-      supabase.auth.onAuthStateChange((event, session) => {
-          console.log({event, session});
-          
-          if (event === 'SIGNED_OUT') {
-              // delete cookies on sign out
-              const expires = new Date(0).toUTCString()
-              document.cookie = `my-access-token=; path=/; expires=${expires}; SameSite=Lax;`
-              document.cookie = `my-refresh-token=; path=/; expires=${expires}; SameSite=Lax;`
-              document.cookie = `userid=; path=/; expires=${expires}; SameSite=Lax;`;
+  useVisibleTask$(() => {
+    let signout = false;
 
-          } else if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-              const maxAge = 100 * 365 * 24 * 60 * 60 // 100 years, never expires
-              document.cookie = `my-access-token=${session!.access_token}; path=/; max-age=${maxAge}; SameSite=Lax;`
-              document.cookie = `my-refresh-token=${session!.refresh_token}; path=/; max-age=${maxAge}; SameSite=Lax;`
-              document.cookie = `userid=${session!.user.id}; path=/; max-age=${maxAge}; SameSite=Lax;`;
+    if (url.searchParams.get('signout') == 1) {
+      signout = true;
+    }
+
+    supabase.auth.onAuthStateChange((event, session) => {
+        console.log({event, session});
+        
+        if (event === 'SIGNED_OUT') {
+            // delete cookies on sign out
+            const expires = new Date(0).toUTCString()
+            document.cookie = `my-access-token=; path=/; expires=${expires}; SameSite=Lax;`
+            document.cookie = `my-refresh-token=; path=/; expires=${expires}; SameSite=Lax;`
+            document.cookie = `userid=; path=/; expires=${expires}; SameSite=Lax;`;
+
+        } else if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+            const maxAge = 100 * 365 * 24 * 60 * 60 // 100 years, never expires
+            document.cookie = `my-access-token=${session!.access_token}; path=/; max-age=${maxAge}; SameSite=Lax;`
+            document.cookie = `my-refresh-token=${session!.refresh_token}; path=/; max-age=${maxAge}; SameSite=Lax;`
+            document.cookie = `userid=${session!.user.id}; path=/; max-age=${maxAge}; SameSite=Lax;`;
+        }
+
+        if (event == 'SIGNED_IN' || session?.user) {
+          if (signout == true) {
+            url.searchParams.delete('signout');
+            window.history.replaceState({}, '', url);
+            signout = false;
+            supabase.auth.signOut();
+            return
+          } else {
+            location.assign('/plan')
           }
-
-          if (event == 'SIGNED_IN' || session?.user) {
-              location.assign('/plan')
-          }
-      })
+        }
+    })
   })
 
   return (

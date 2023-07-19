@@ -5,10 +5,9 @@ import type { Database } from '~/supabase';
 import { type DocumentHead, routeLoader$, server$ } from '@builder.io/qwik-city';
 import { CurrentLiveDrillBox, DrillItem } from '~/components/drill-item';
 import dayjs from 'dayjs';
-import { md5 } from './utils';
 import { Navbar } from '~/components/navbar';
 import anime from 'animejs';
-import { AuthBanner } from '~/components/auth-banner';
+import { AuthBanner, IdenticonSvg } from '~/components/auth-banner';
 type PlanRow = Database['public']['Tables']['plans']['Row'];
 type DrillRow = Database['public']['Tables']['drills']['Row'];
 
@@ -393,7 +392,7 @@ export default component$(() => {
                                             <span class="author-value">{plan.value?.data.user_email}</span>
                                         </div>
                                         <div class="author-logo">
-                                            <img class="image-logo" width={80} height={80} src={`https://www.gravatar.com/avatar/${plan.value?.data.user_email ? md5(plan.value.data.user_email) : '00000000000000000000000000000000'}?s=80&d=identicon`} alt="" />
+                                            <IdenticonSvg currentEmail={plan.value?.data.user_email || 'username'} />
                                         </div>
                                     </div>
                                 </div>

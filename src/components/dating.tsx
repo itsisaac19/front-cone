@@ -36,6 +36,14 @@ export const TimeStartPicker = qwikify$<TimePickerProps>((props) => {
     const inputHandler = props.inputHandler;
     const endTime = props.endTime;
 
+    const ref = React.createRef<HTMLInputElement>();
+
+    React.useEffect(() => {
+        if (ref.current?.id) { 
+            ref.current.id = 'start-picker-id';
+        }
+    })
+
     return (
         <ThemeProvider theme={theme}>
             <LocalizationProvider dateAdapter={AdapterDayjs}>
@@ -43,6 +51,7 @@ export const TimeStartPicker = qwikify$<TimePickerProps>((props) => {
                 onChange={(pickerValue) => {
                     inputHandler(pickerValue);
                 }}
+                inputRef={ref}
                 label="Start Time" 
                 value={value ? dayjs(value, 'hh:mm A') : dayjs()}
                 sx={{
@@ -68,6 +77,14 @@ export const TimeEndPicker = qwikify$<TimePickerProps>((props) => {
     const inputHandler = props.inputHandler;
     const startTime = props.startTime;
 
+    const ref = React.createRef<HTMLInputElement>();
+
+    React.useEffect(() => {
+        if (ref.current?.id) { 
+            ref.current.id = 'end-picker-id';
+        }
+    })
+
     return (
         <ThemeProvider theme={theme}>
             <LocalizationProvider dateAdapter={AdapterDayjs}>
@@ -76,6 +93,7 @@ export const TimeEndPicker = qwikify$<TimePickerProps>((props) => {
                 onChange={(pickerValue) => {
                     inputHandler(pickerValue);
                 }}
+                inputRef={ref}
                 value={value ? dayjs(value, 'hh:mm A') : dayjs()}
                 sx={{
                     '& .MuiInputBase-root': {
