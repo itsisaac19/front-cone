@@ -2187,7 +2187,26 @@ body[theme="light"] {
 .sandbox-wrap {
   margin: 0px;
   display: grid;
-  height: 100vh;
+  grid-template-rows: 71px minmax(0, 1fr);
+  min-height: 100vh;
+}
+.sandbox-wrap .canvas-wrap {
+  height: max(800px, calc(100vh - 71px - 100px));
+  width: auto;
+  margin: 20px 20px 0 20px;
+  background: rgb(0, 0, 0);
+  box-shadow: rgba(255, 255, 255, 0.15) 0px 6px 24px 0px, rgba(255, 255, 255, 0.18) 0px 0px 0px 1px;
+  border-radius: 10px;
+
+  overflow: hidden; 
+}
+[theme="light"] .canvas-wrap  {
+  background: rgb(255, 255, 255);
+  box-shadow: rgba(0, 0, 0, 0.05) 0px 6px 24px 0px, rgba(0, 0, 0, 0.08) 0px 0px 0px 1px;
+}
+.canvas-wrap[export="high"] {
+  height: unset;
+  width: unset;
 }
 .sandbox-wrap canvas {
   width: 100%;
@@ -2203,6 +2222,7 @@ canvas.select {
   pointer-events: none;
 }
 .write-box {
+  display: none;
   position: absolute;
   bottom: 0;
   padding: 20px;
@@ -2224,10 +2244,9 @@ canvas.select {
 }
 
 .sandbox-toolbar-outer {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
+  position: relative;
+  display: grid;
+  height: max-content;
 }
 .sandbox-toolbar-inner {
   position: relative;
@@ -2313,8 +2332,14 @@ canvas.select {
 
   color: #666;
 }
+[theme="light"] .view-action {
+  background: #e3e3e3;
+}
 .view-action:hover {
   color: #fff;
+}
+[theme="light"] .view-action:hover {
+  color: #000;
 }
 .view-action svg {
   margin: auto;
@@ -2334,6 +2359,9 @@ canvas.select {
   margin: auto 15px auto 5px;
   font-variation-settings: 'wght' 500;
 }
+[theme="light"] .field-scale-label {
+  color: #000;
+}
 .content-control-wrap {
   display: grid;
   grid-template-columns: max-content max-content max-content max-content;
@@ -2346,6 +2374,7 @@ canvas.select {
   all: unset;
   background: #2c2a23;
   margin: 0 0 0 20px;
+  display: none;
 }
 [theme="light"] .organize-players {
   background: #e3e3e3;
@@ -2382,6 +2411,7 @@ canvas.select {
 }
 .get-positionals-button {  
   all: unset;
+  display: none;
 }
 [theme="light"] .get-positionals-button {
   background: #e3e3e3;
@@ -2408,8 +2438,15 @@ canvas.select {
 .content-control-wrap > *:hover {
   background: #252525;
 } 
+[theme="light"] .content-control-wrap > *:hover {
+  background: #c5c5c5;
+} 
+
 .content-control-wrap > *:focus {
   background: #3f3f3f;
+}
+[theme="light"] .content-control-wrap > *:focus {
+  background: #9f9f9f;
 }
 
 .positional-control-wrap {
@@ -2439,4 +2476,83 @@ img.server-test {
   position: absolute;
   z-index: 10;
   background: gray;
+}
+
+.export-wrap {
+  position: fixed;
+  top: 0;
+  right: 0;
+  left: 0;
+  bottom: 0;
+
+  display: none;
+  background: #00000067;
+}
+.export-wrap.export {
+  display: grid;
+}
+.download-image-wrap {
+  display: grid;
+  height: 100%;
+  background: #000000;
+}
+.download-image-background {
+  margin: auto;
+  width: auto;
+  height: 100vh;
+}
+.download-modal-controls {
+  position: absolute;
+  display: grid;
+  top: 0;
+  left: 0;
+  right: 0;
+
+  grid-template-columns: 1fr 1fr;
+
+  margin: 20px;
+
+  height: max-content;
+}
+.download-modal-controls .close {
+  all: unset;
+  cursor: pointer;
+  color: #efefef;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: #000000;
+  border: 2px solid #1d1d1d;
+  margin: 0 auto 0 0;
+  text-align: center;
+  font-variation-settings: "wght" 500;
+  font-size: 14px;
+  width: 100px;
+  height: max-content;
+  transition: background .3s ease,color .3s ease,opacity .3s ease,border .3s ease;
+}
+.download-modal-controls .close:hover, .download-modal-controls .close:focus {
+  background: #1b1b1b;
+  border: 2px solid #373737;
+}
+.download-modal-controls .download {
+  all: unset;
+  cursor: pointer;
+  color: #000;
+  padding: 10px 14px;
+  border-radius: 8px;
+  background: #c1c1c1;
+  margin: 0 0 0 auto;
+  text-align: center;
+  font-variation-settings: "wght" 500;
+  font-size: 14px;
+  width: 100px;
+  height: max-content;
+  transition: background .3s ease,color .3s ease,opacity .3s ease,border .3s ease;
+}
+.download-modal-controls .download:hover, .download-modal-controls .download:focus {
+  background: #d9d9d9;
+}
+.download.downloading {
+  opacity: .4;
+  color: #444;
 }
