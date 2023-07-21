@@ -2181,7 +2181,32 @@ body.requesting .meta-plan-notifications > qwik-react > span {
 .sandbox-wrap {
   margin: 0px;
   display: grid;
+<<<<<<< Updated upstream
   height: 100vh;
+=======
+  grid-template-rows: 71px minmax(0, 1fr);
+  min-height: 100vh;
+}
+.sandbox-wrap .canvas-wrap {
+  width: auto;
+
+  height: auto;
+  margin: 0;
+
+  background: rgb(0, 0, 0);
+  box-shadow: rgba(255, 255, 255, 0.15) 0px 6px 24px 0px, rgba(255, 255, 255, 0.18) 0px 0px 0px 1px;
+  border-radius: 10px;
+
+  overflow: hidden; 
+}
+[theme="light"] .canvas-wrap  {
+  background: rgb(255, 255, 255);
+  box-shadow: rgba(0, 0, 0, 0.05) 0px 6px 24px 0px, rgba(0, 0, 0, 0.08) 0px 0px 0px 1px;
+}
+.canvas-wrap[export="high"] {
+  height: unset;
+  width: unset;
+>>>>>>> Stashed changes
 }
 .sandbox-wrap canvas {
   width: 100%;
@@ -2294,6 +2319,7 @@ canvas.select {
 }
 .content-control-wrap {
   display: grid;
+<<<<<<< Updated upstream
   grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
   column-gap: 4px;
   background-color: black;
@@ -2302,6 +2328,26 @@ canvas.select {
 
   border: 1px solid #292929;
   border-top: none;
+=======
+  grid-template-columns: auto;
+  grid-auto-flow: column;
+  width: max-content;
+  column-gap: 8px;
+  padding: 4px 4px;
+  row-gap: 4px;
+}
+.content-control-wrap .spacer {
+  margin: 0 10px;
+}
+.organize-players {
+  all: unset;
+  background: #2c2a23;
+  margin: 0 0 0 20px;
+  display: none;
+}
+[theme="light"] .organize-players {
+  background: #e3e3e3;
+>>>>>>> Stashed changes
 }
 @media screen and (max-width: 950px) {
   .sandbox-toolbar-inner {
@@ -2327,9 +2373,27 @@ canvas.select {
   all: unset;
   display: none;
 }
+<<<<<<< Updated upstream
 
 .content-control-wrap > * {
   background: #1b1b1b;
+=======
+[theme="light"] .get-positionals-button {
+  background: #e3e3e3;
+  color: black;
+}
+.field-orientation {
+  all: unset;
+  background: #2c2a23;
+}
+[theme="light"] .field-orientation {
+  background: #e3e3e3;
+  color: black;
+}
+
+.content-control-wrap > button {
+  border-radius: 8px;
+>>>>>>> Stashed changes
   padding: 10px 16px;
   margin: 0px 0;
   text-align: center;
