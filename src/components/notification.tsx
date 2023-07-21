@@ -28,7 +28,7 @@ export const NotificationSwitch = qwikify$<NotificationProps>((props) => {
 
     return (
         <ThemeProvider theme={theme}>
-            {pwa ? <Switch onClick={changeHandler} checked={checkedState} key={'pwa-enabled'}  /> : <Switch key={'pwa-disabled'} disabled  />}
+            {pwa ? <Switch name='enabled-switch' onClick={changeHandler} checked={checkedState} key={'pwa-enabled'}  /> : <Switch name='disabled-switch' key={'pwa-disabled'} disabled  />}
         </ThemeProvider>
     )
 })

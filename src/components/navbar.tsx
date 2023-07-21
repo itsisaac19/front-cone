@@ -53,7 +53,7 @@ export const Navbar = component$<NavbarProps>((props) => {
                     <span class="menu-sidebar-label first">NAVIGATION</span>
                     <div class="link-group">
                         <Link class="menu-sidebar-link" href="/plan">My Plans</Link>
-                        <Link class="menu-sidebar-link" href="/">Home</Link>
+                        <Link class="menu-sidebar-link" href="/share">Community Plans</Link>
                     </div>
 
                     <span class="menu-sidebar-label">ACCOUNT</span>

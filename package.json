@@ -57,6 +57,7 @@
     "animejs": "^3.2.1",
     "canvas": "^2.11.2",
     "dayjs": "^1.11.8",
+    "minidenticons": "^4.2.0",
     "nanoid": "^4.0.2",
     "nprogress": "^0.2.0",
     "paper": "^0.12.17",
