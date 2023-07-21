@@ -2191,9 +2191,11 @@ body[theme="light"] {
   min-height: 100vh;
 }
 .sandbox-wrap .canvas-wrap {
-  height: max(800px, calc(100vh - 71px - 100px));
   width: auto;
-  margin: 20px 20px 0 20px;
+
+  height: auto;
+  margin: 0;
+
   background: rgb(0, 0, 0);
   box-shadow: rgba(255, 255, 255, 0.15) 0px 6px 24px 0px, rgba(255, 255, 255, 0.18) 0px 0px 0px 1px;
   border-radius: 10px;
@@ -2364,12 +2366,16 @@ canvas.select {
 }
 .content-control-wrap {
   display: grid;
-  grid-template-columns: max-content max-content max-content max-content;
+  grid-template-columns: auto;
+  grid-auto-flow: column;
+  width: max-content;
   column-gap: 8px;
   padding: 4px 4px;
   row-gap: 4px;
 }
-
+.content-control-wrap .spacer {
+  margin: 0 10px;
+}
 .organize-players {
   all: unset;
   background: #2c2a23;
@@ -2417,8 +2423,16 @@ canvas.select {
   background: #e3e3e3;
   color: black;
 }
+.field-orientation {
+  all: unset;
+  background: #2c2a23;
+}
+[theme="light"] .field-orientation {
+  background: #e3e3e3;
+  color: black;
+}
 
-.content-control-wrap > * {
+.content-control-wrap > button {
   border-radius: 8px;
   padding: 10px 16px;
   text-align: center;

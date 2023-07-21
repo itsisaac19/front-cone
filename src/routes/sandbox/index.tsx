@@ -574,6 +574,10 @@ const findItemByName = $((name: string) => {
     const found = paper.project.activeLayer.children.find(item => item.name === name);
     return found;
 })
+/* const findAllItemsByName = $((name: string) => {
+    const found = paper.project.activeLayer.children.filter(item => item.name === name);
+    return found;
+}) */
 
 const willBeOutsideBounds = $(async (deltaX: number, deltaY: number) => {
     const fieldLayer = await findLayer('field');
@@ -661,7 +665,7 @@ export default component$(() => {
     const offenseSectorAngle = useSignal(90);
     const defenseSectorAngle = useSignal(60);
 
-    const zoom = useSignal(0.8);
+    const zoom = useSignal(0.7);
     const playerCount = useSignal(0);
 
     const theme = useSignal<'light' | 'dark'>('light');
@@ -749,9 +753,18 @@ export default component$(() => {
             const exportWrap = document.querySelector('.canvas-wrap') as HTMLElement;
             exportWrap.setAttribute('export', 'high');
 
-            const exportSize = {
+            console.log(field.bounds)
+
+            let exportSize = {
                 height: field.bounds.height,
                 width: (field.bounds.height * 0.846)
+            }
+
+            if (field.name === 'horizontal') {
+                exportSize = {
+                    height: (field.bounds.width * 0.846),
+                    width: field.bounds.width
+                }
             }
 
             exportWrap.style.height = exportSize.height + 'px';
@@ -764,9 +777,10 @@ export default component$(() => {
             paper.view.zoom = 1;
 
             const mark = await findItemByName('mark') as paper.PointText;
-            mark.scale(1 / mark.scaling.x);
-            mark.scale(field.scaling.x);
-            const markPoint = field.bounds.topCenter.add(new paper.Point(0, 80 * field.scaling.x));
+            mark.scaling = new paper.Point(0.65, 0.65);
+            mark.scale((field.scaling.x));
+            console.log()
+            const markPoint = field.bounds.topCenter.add(new paper.Point(0, (40 + (field.name == 'horizontal' ? 15 : 0)) * field.scaling.x));
             mark!.position = markPoint; 
             mark!.visible = true;
 
@@ -820,7 +834,61 @@ export default component$(() => {
         enableHandlers();
     })
 
-    const fieldScale = useSignal(2);
+    const fieldScale = useSignal(1.5);
+    const fieldOrientation = useSignal<'horizontal' | 'vertical'>('vertical');
+
+    useTask$(async ({ track }) => {
+        track(() => fieldOrientation.value) 
+        const value = fieldOrientation.value;
+
+        try {
+            const fieldLayer = await findLayer('field');
+            const field = fieldLayer?.children[0];
+
+            if (!field) return;
+    
+            field.name = value;
+
+            if (value === 'horizontal') {
+                field.tween({
+                    rotation: 90
+                }, {
+                    easing: 'easeInOutCubic',
+                    duration: 1400
+                })
+                console.log(field.rotation)
+                field.children.forEach(fieldElement => {
+                    if (fieldElement.name === 'field-label') {
+                        fieldElement.tween({
+                            rotation: -90
+                        }, {
+                            easing: 'easeInOutCubic',
+                            duration: 1400
+                        })
+                    }  
+                })
+            } else {
+                field.tween({
+                    rotation: 0
+                }, {
+                    easing: 'easeInOutCubic',
+                    duration: 1400
+                })
+                field.children.forEach(fieldElement => {
+                    if (fieldElement.name === 'field-label') {
+                        fieldElement.tween({
+                            rotation: 0
+                        }, {
+                            easing: 'easeInOutCubic',
+                            duration: 1400
+                        })
+                    }  
+                })
+            }
+        } catch (error) {
+            //console.error(error);
+        }
+    })
 
     const fieldScaleRangeInputHandler = $(async (e: any) => {
         const lastScale = fieldScale.value;
@@ -842,6 +910,14 @@ export default component$(() => {
     })
 
     useVisibleTask$(async () => {
+        if (fieldOrientation.value === 'horizontal') {
+            const suggested = Math.round((window.innerHeight / 700) * 20) / 20;
+            fieldScale.value = suggested >= 1 ? suggested : 1;
+        } else {
+            const suggested = Math.round((window.innerHeight / 900) * 20) / 20;
+            fieldScale.value = suggested >= 1 ? suggested : 1;
+        }
+
         document.body.style.overflow = 'hidden';
         document.body.setAttribute('theme', theme.value)
 
@@ -886,8 +962,23 @@ export default component$(() => {
                 `)
 
                 field.position = paper.view.center;
+                field.applyMatrix = false; 
                 field.scale(fieldScale.value);
-                field.applyMatrix = false;
+                field.name = fieldOrientation.value;
+
+                if (fieldOrientation.value === 'horizontal') {
+                    field.rotate(90);
+                }
+
+                field.children.forEach(fieldElement => {
+                    if (fieldElement.name === 'field-label') {
+                        fieldElement.applyMatrix = false;
+                        if (fieldOrientation.value === 'horizontal') {
+                            field.rotate(-90);
+                        }
+                    }  
+                })
+
 
                 const everythingElseLayer = new paper.Layer()
                 paper.project.addLayer(everythingElseLayer);
@@ -1118,9 +1209,15 @@ export default component$(() => {
                     <div class="content-control-wrap">
                         <button class="add-offense-player" onClick$={() => addOffensePlayer()} >Add Offense</button>
                         <button class="add-offense-player" onClick$={() => addDefensePlayer()} >Add Defense</button>
-                        <button class="add-offense-player" onClick$={exportCanvasImage} >Export</button>
+                        <div class="spacer"></div>
                         <button class="organize-players" onClick$={organizePlayersHandler} >Organize</button>
-                        <button class="clear-players" onClick$={clearPlayersHandler} >Clear</button>
+                        <button class="clear-players" onClick$={clearPlayersHandler} >Clear Field</button>
+                        <button class="field-orientation" onClick$={() => {
+                            if (fieldOrientation.value === 'horizontal') return fieldOrientation.value = 'vertical';
+                            if (fieldOrientation.value === 'vertical') return fieldOrientation.value = 'horizontal';
+                        }} >Rotate Field</button>
+                        <div class="spacer"></div>
+                        <button class="add-offense-player" onClick$={exportCanvasImage} >Export Image</button>
                     </div>
                     <div class="positional-control-wrap">
                         <button class="get-positionals-button">Get positionals</button>
