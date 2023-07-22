@@ -1,4 +1,5 @@
 import { $, component$, type NoSerialize, noSerialize, useSignal, useStore, useTask$, useVisibleTask$ } from '@builder.io/qwik';
+import { useLocation } from '@builder.io/qwik-city';
 // This import statement is just for type information
 import type Paper from 'paper';
 
@@ -316,7 +317,7 @@ const drawSectorFieldOnCircle = (props: SectorFieldProps) => {
                 //console.log(savedSector.id, ' is not being intersected by anyone.')
                 savedSector.tween({
                     fillColor: theme == 'dark' ? new paper.Color(0, 0, 0, 1) : new paper.Color(1, 1, 1, 1),
-                    strokeColor: new paper.Color('#2d2d2d')
+                    strokeColor: new paper.Color('#4d4d4d')
                 }, {
                     duration: 300,
                     easing: 'easeOutCubic'
@@ -329,8 +330,8 @@ const drawSectorFieldOnCircle = (props: SectorFieldProps) => {
             //console.log(`tweening ${sector.id} (author) back to normal`)
             sector.tween({
                 fillColor: theme == 'dark' ? new paper.Color(0, 0, 0, 1) : new paper.Color(1, 1, 1, 1),
-                strokeColor: new paper.Color('#2d2d2d ')
-            }, {
+                strokeColor: new paper.Color('#4d4d4d ')
+            }, { 
                 duration: 300,
                 easing: 'easeOutCubic'
             })
@@ -566,21 +567,32 @@ const getRandomInteger = ((min: number, max: number) => {
     trashLayer?.addChildren(playerItems);
 })  */
 
-const findLayer = $((layerName: string) => {
-    const found = paper.project.layers.find(layer => layer.name === layerName);
+const findLayer = (name: string) => {
+    const found = paper.project.layers.find(layer => layer.name === name);
     return found;
-})
-const findItemByName = $((name: string) => {
-    const found = paper.project.activeLayer.children.find(item => item.name === name);
-    return found;
-})
-/* const findAllItemsByName = $((name: string) => {
-    const found = paper.project.activeLayer.children.filter(item => item.name === name);
-    return found;
-}) */
+};
+const findItemByName = (name: string): paper.Item | undefined => {
+    for (const layer of paper.project.layers) {
+        const item = layer.children.find(item => item.name === name);
+        if (item) {
+            return item;
+        }
+    }
+    return undefined; 
+};
+/* const findAllItemsWithName = (name: string): paper.Item[] => {
+    const foundItems: paper.Item[] = [];
+
+    for (const layer of paper.project.layers) {
+        const itemsWithName = layer.children.filter(item => item.name === name);
+        foundItems.push(...itemsWithName);
+    }
+
+    return foundItems;
+}; */
 
 const willBeOutsideBounds = $(async (deltaX: number, deltaY: number) => {
-    const fieldLayer = await findLayer('field');
+    const fieldLayer = findLayer('field');
     const field = fieldLayer?.children[0];
 
 
@@ -668,12 +680,14 @@ export default component$(() => {
     const zoom = useSignal(0.7);
     const playerCount = useSignal(0);
 
-    const theme = useSignal<'light' | 'dark'>('light');
+    const { url } = useLocation();
+    const themeString = url.searchParams.get('theme') === 'dark' ? 'dark' : 'light';
+    const theme = useSignal<'light' | 'dark'>(themeString);
 
-    const addOffensePlayer = $(async (initialPoint?: paper.Point) => {
+    const addOffensePlayer = $((initialPoint?: paper.Point) => {
 
         const pData = drawPlayer({
-            point: initialPoint || paper.view.center,
+            point: initialPoint || paper.view.center.add(new paper.Point(0, 50)),
             radius: 30,
             sectorAngle: offenseSectorAngle.value,
             offense: true,
@@ -684,10 +698,10 @@ export default component$(() => {
 
         return pData;
     })
-    const addDefensePlayer = $(async (initialPoint?: paper.Point) => {
+    const addDefensePlayer = $((initialPoint?: paper.Point) => {
 
         const pData = drawPlayer({
-            point: initialPoint || paper.view.center,
+            point: initialPoint || paper.view.center.subtract(new paper.Point(0, 50)),
             radius: 30,
             sectorAngle: defenseSectorAngle.value,
             offense: false,
@@ -700,7 +714,23 @@ export default component$(() => {
     })
 
     const organizePlayersHandler = $(() => {
-        currentPlayerStore
+        //currentPlayerStore
+    })
+
+    const toggleButtonDrop = $((e: any, currentTarget: any) => {
+        const buttonDrop = currentTarget.querySelector('.button-drop');
+
+        const allOpenDrops = document.querySelectorAll('.drop');
+        allOpenDrops.forEach(drop => {
+            if (drop === buttonDrop) return;
+            drop.classList.remove('drop');
+        })
+        
+        if (buttonDrop.classList.contains('drop')) {
+            buttonDrop.classList.remove('drop')
+        } else {
+            buttonDrop.classList.add('drop')
+        }
     })
 
     const clearPlayersHandler = $(() => {
@@ -715,7 +745,7 @@ export default component$(() => {
 
     const exportCanvasImage = $(async () => {
         disableHandlers();
-        const fieldLayer = await findLayer('field');
+        const fieldLayer = findLayer('field');
         const field = fieldLayer?.children[0];
         
         field?.children.forEach(fieldItem => {
@@ -776,7 +806,7 @@ export default component$(() => {
             paper.view.center = field.bounds.center
             paper.view.zoom = 1;
 
-            const mark = await findItemByName('mark') as paper.PointText;
+            const mark = findItemByName('mark') as paper.PointText;
             mark.scaling = new paper.Point(0.65, 0.65);
             mark.scale((field.scaling.x));
             console.log()
@@ -837,12 +867,30 @@ export default component$(() => {
     const fieldScale = useSignal(1.5);
     const fieldOrientation = useSignal<'horizontal' | 'vertical'>('vertical');
 
+    useTask$(({ track }) => {
+        track(() => fieldScale.value)
+        const value = fieldScale.value;
+
+        try {
+            const fieldLayer = findLayer('field');
+            const field = fieldLayer?.children[0];
+
+            if (!field) throw new Error('no field');
+
+            field.scaling = new paper.Point(value, value);
+            paper.view.center = field.bounds.center;
+
+        } catch (error) {
+            //console.error(error)
+        }
+    })
+
     useTask$(async ({ track }) => {
         track(() => fieldOrientation.value) 
         const value = fieldOrientation.value;
 
         try {
-            const fieldLayer = await findLayer('field');
+            const fieldLayer = findLayer('field');
             const field = fieldLayer?.children[0];
 
             if (!field) return;
@@ -851,19 +899,18 @@ export default component$(() => {
 
             if (value === 'horizontal') {
                 field.tween({
-                    rotation: 90
+                    rotation: 90,
                 }, {
                     easing: 'easeInOutCubic',
-                    duration: 1400
+                    duration: 1000
                 })
-                console.log(field.rotation)
                 field.children.forEach(fieldElement => {
                     if (fieldElement.name === 'field-label') {
                         fieldElement.tween({
-                            rotation: -90
+                            rotation: -90,
                         }, {
                             easing: 'easeInOutCubic',
-                            duration: 1400
+                            duration: 1000
                         })
                     }  
                 })
@@ -872,7 +919,7 @@ export default component$(() => {
                     rotation: 0
                 }, {
                     easing: 'easeInOutCubic',
-                    duration: 1400
+                    duration: 1000
                 })
                 field.children.forEach(fieldElement => {
                     if (fieldElement.name === 'field-label') {
@@ -880,7 +927,7 @@ export default component$(() => {
                             rotation: 0
                         }, {
                             easing: 'easeInOutCubic',
-                            duration: 1400
+                            duration: 1000
                         })
                     }  
                 })
@@ -890,20 +937,9 @@ export default component$(() => {
         }
     })
 
-    const fieldScaleRangeInputHandler = $(async (e: any) => {
-        const lastScale = fieldScale.value;
-
-        const fieldLayer = await findLayer('field');
-        const field = fieldLayer?.children[0];
-
-        if (field) {
-            field.scale(1 / lastScale);
-            field.scale(e.target.value);
-            paper.view.center = field.bounds.center;
-        }
-
-        fieldScale.value = e.target.value;
-    })
+    /* const fieldScaleRangeInputHandler = $(async (e: any) => {
+        fieldScale.value = parseFloat(e.target.value);
+    }) */
 
     const downloadExportModal = $(() => {
         //e.target.classList.add('downloading');
@@ -979,11 +1015,6 @@ export default component$(() => {
                     }  
                 })
 
-
-                const everythingElseLayer = new paper.Layer()
-                paper.project.addLayer(everythingElseLayer);
-                everythingElseLayer.activate();
-
                 const mark = paper.project.importSVG(`
                 <svg width="296" height="25" viewBox="0 0 296 25" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M3.824 0.863998V24H0.688V0.863998H3.824ZM14.64 3.744H0.912V0.863998H14.64V3.744ZM12.912 14.176H0.848V11.328H12.912V14.176ZM32.134 24H28.998V0.863998H37.734C40.2087 0.863998 42.1393 1.48267 43.526 2.72C44.934 3.936 45.638 5.632 45.638 7.808C45.638 9.408 45.2433 10.7627 44.454 11.872C43.686 12.9813 42.5873 13.7707 41.158 14.24L45.862 24H42.374L38.054 14.848H32.134V24ZM32.134 3.68V12.064H37.766C39.2167 12.064 40.3367 11.6907 41.126 10.944C41.9367 10.1973 42.342 9.16267 42.342 7.84C42.342 6.496 41.926 5.472 41.094 4.768C40.2833 4.04267 39.1633 3.68 37.734 3.68H32.134ZM81.2658 12.416C81.2658 14.7627 80.7858 16.8427 79.8258 18.656C78.8871 20.448 77.5751 21.856 75.8898 22.88C74.2258 23.8827 72.2951 24.384 70.0978 24.384C67.9431 24.384 66.0231 23.8827 64.3378 22.88C62.6738 21.856 61.3724 20.448 60.4338 18.656C59.4951 16.864 59.0258 14.784 59.0258 12.416C59.0258 10.0693 59.4951 8 60.4338 6.208C61.3938 4.416 62.7058 3.008 64.3698 1.984C66.0338 0.959998 67.9538 0.447998 70.1298 0.447998C72.3271 0.447998 74.2578 0.959998 75.9218 1.984C77.5858 3.008 78.8871 4.416 79.8258 6.208C80.7858 8 81.2658 10.0693 81.2658 12.416ZM77.9698 12.416C77.9698 10.624 77.6391 9.056 76.9778 7.712C76.3378 6.368 75.4311 5.33333 74.2578 4.608C73.0844 3.86133 71.7084 3.488 70.1298 3.488C68.5724 3.488 67.2071 3.86133 66.0338 4.608C64.8604 5.33333 63.9431 6.368 63.2818 7.712C62.6418 9.056 62.3218 10.624 62.3218 12.416C62.3218 14.208 62.6418 15.776 63.2818 17.12C63.9431 18.464 64.8604 19.5093 66.0338 20.256C67.2071 21.0027 68.5724 21.376 70.1298 21.376C71.7084 21.376 73.0844 21.0027 74.2578 20.256C75.4311 19.488 76.3378 18.432 76.9778 17.088C77.6391 15.744 77.9698 14.1867 77.9698 12.416ZM98.9728 24H95.8368V0.863998H98.9728L111.677 20.064H110.813V0.863998H113.949V24H110.813L98.1088 4.8H98.9728V24ZM137.769 2.304V24H134.633V2.304H137.769ZM127.657 3.744V0.863998H144.713V3.744H127.657ZM187.336 24.352C185.138 24.352 183.218 23.8613 181.576 22.88C179.933 21.8773 178.653 20.4907 177.736 18.72C176.818 16.928 176.36 14.8373 176.36 12.448C176.36 10.0587 176.829 7.968 177.768 6.176C178.706 4.384 180.008 2.98667 181.672 1.984C183.357 0.981333 185.298 0.48 187.496 0.48C189.245 0.48 190.824 0.810666 192.232 1.472C193.64 2.112 194.813 3.01867 195.752 4.192C196.69 5.36533 197.298 6.74133 197.576 8.32H194.216C193.789 6.80533 192.968 5.62133 191.752 4.768C190.536 3.91467 189.085 3.488 187.4 3.488C185.842 3.488 184.477 3.86133 183.304 4.608C182.152 5.33333 181.256 6.368 180.616 7.712C179.976 9.03467 179.656 10.6027 179.656 12.416C179.656 14.208 179.976 15.776 180.616 17.12C181.256 18.464 182.162 19.5093 183.336 20.256C184.509 20.9813 185.864 21.344 187.4 21.344C189.106 21.344 190.578 20.928 191.816 20.096C193.074 19.2427 193.917 18.1013 194.344 16.672H197.672C197.352 18.208 196.701 19.552 195.72 20.704C194.76 21.856 193.554 22.752 192.104 23.392C190.674 24.032 189.085 24.352 187.336 24.352ZM232.941 12.416C232.941 14.7627 232.461 16.8427 231.501 18.656C230.562 20.448 229.25 21.856 227.565 22.88C225.901 23.8827 223.97 24.384 221.773 24.384C219.618 24.384 217.698 23.8827 216.013 22.88C214.349 21.856 213.047 20.448 212.109 18.656C211.17 16.864 210.701 14.784 210.701 12.416C210.701 10.0693 211.17 8 212.109 6.208C213.069 4.416 214.381 3.008 216.045 1.984C217.709 0.959998 219.629 0.447998 221.805 0.447998C224.002 0.447998 225.933 0.959998 227.597 1.984C229.261 3.008 230.562 4.416 231.501 6.208C232.461 8 232.941 10.0693 232.941 12.416ZM229.645 12.416C229.645 10.624 229.314 9.056 228.653 7.712C228.013 6.368 227.106 5.33333 225.933 4.608C224.759 3.86133 223.383 3.488 221.805 3.488C220.247 3.488 218.882 3.86133 217.709 4.608C216.535 5.33333 215.618 6.368 214.957 7.712C214.317 9.056 213.997 10.624 213.997 12.416C213.997 14.208 214.317 15.776 214.957 17.12C215.618 18.464 216.535 19.5093 217.709 20.256C218.882 21.0027 220.247 21.376 221.805 21.376C223.383 21.376 224.759 21.0027 225.933 20.256C227.106 19.488 228.013 18.432 228.653 17.088C229.314 15.744 229.645 14.1867 229.645 12.416ZM250.648 24H247.512V0.863998H250.648L263.352 20.064H262.488V0.863998H265.624V24H262.488L249.784 4.8H250.648V24ZM295.684 24H281.572V0.863998H295.684V3.744H283.268L284.708 2.496V10.976H294.596V13.76H284.708V22.4L283.268 21.088H295.684V24Z" fill="black"/>
@@ -993,9 +1024,15 @@ export default component$(() => {
                 mark.name = 'mark';
                 mark.applyMatrix = false;
 
+                if (theme.value === 'dark') mark.fillColor = new paper.Color('white');
+
+                const everythingElseLayer = new paper.Layer()
+                paper.project.addLayer(everythingElseLayer);
+                everythingElseLayer.activate();
+
                 const initial = field.bounds.center;
 
-                await addOffensePlayer(initial.add(new paper.Point(0, 400)))
+                addOffensePlayer(initial.add(new paper.Point(0, 400)))
                 addDefensePlayer(initial.subtract(new paper.Point(0, 400)))
             }
         } catch (error) {
@@ -1060,7 +1097,10 @@ export default component$(() => {
             resetPanHandlers();
         }
 
-        const panMouseDownHandler = () => {
+        const panMouseDownHandler = (e: any) => { 
+            const isOnCanvas = e.target.id === 'canvas';
+            if (!isOnCanvas) return;
+
             isGrabbing = true;
             document.addEventListener('mousemove', panMoveGrabHandler)
             document.addEventListener('mouseup', panMouseUpHandler)
@@ -1189,38 +1229,83 @@ export default component$(() => {
             <div class="write-box"></div>
             <div class="sandbox-toolbar-outer">
                 <div class="sandbox-toolbar-inner">
-                    <div class="mouse-tools">
+                    <div class="mouse-tools button-group">
                         <div onClick$={() => {
                             currentMouseTool.value = 'select';
                             document.removeEventListener('mousedown', moveToolMouseDownHandler);
                             MoveToolHandlers('remove')
                             enableHandlers();
-                        }} class={`select mouse-tool ${currentMouseTool.value === 'select' ? 'active' : ''}`}>
+                        }} class={`button select mouse-tool ${currentMouseTool.value === 'select' ? 'active' : ''}`}>
                             <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="css-i6dzq1"><path d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z"></path><path d="M13 13l6 6"></path></svg>
                         </div>
                         <div onClick$={() => {
                             currentMouseTool.value = 'move';
                             MoveToolHandlers('assign')
                             disableHandlers();
-                        }} class={`move mouse-tool ${currentMouseTool.value === 'move' ? 'active' : ''}`}>
+                        }} class={`button move mouse-tool ${currentMouseTool.value === 'move' ? 'active' : ''}`}>
                             <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="css-i6dzq1"><polyline points="5 9 2 12 5 15"></polyline><polyline points="9 5 12 2 15 5"></polyline><polyline points="15 19 12 22 9 19"></polyline><polyline points="19 9 22 12 19 15"></polyline><line x1="2" y1="12" x2="22" y2="12"></line><line x1="12" y1="2" x2="12" y2="22"></line></svg>
                         </div>
                     </div>
-                    <div class="content-control-wrap">
-                        <button class="add-offense-player" onClick$={() => addOffensePlayer()} >Add Offense</button>
-                        <button class="add-offense-player" onClick$={() => addDefensePlayer()} >Add Defense</button>
-                        <div class="spacer"></div>
-                        <button class="organize-players" onClick$={organizePlayersHandler} >Organize</button>
-                        <button class="clear-players" onClick$={clearPlayersHandler} >Clear Field</button>
-                        <button class="field-orientation" onClick$={() => {
-                            if (fieldOrientation.value === 'horizontal') return fieldOrientation.value = 'vertical';
-                            if (fieldOrientation.value === 'vertical') return fieldOrientation.value = 'horizontal';
-                        }} >Rotate Field</button>
-                        <div class="spacer"></div>
-                        <button class="add-offense-player" onClick$={exportCanvasImage} >Export Image</button>
-                    </div>
-                    <div class="positional-control-wrap">
-                        <button class="get-positionals-button">Get positionals</button>
+                    <div class="content-control-wrap button-group">
+                        <div class="control-button-wrap standard-sandbox-button" onClick$={toggleButtonDrop} >
+                            <button class="add-offense-player button">Add Player</button>
+                            <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="css-i6dzq1"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><line x1="20" y1="8" x2="20" y2="14"></line><line x1="23" y1="11" x2="17" y2="11"></line></svg>
+                            <div class="add-player-drop button-drop">
+                                <button class="standard-sandbox-button" data-offense="true" onClick$={() => addOffensePlayer()}>Offense</button>
+                                <button class="standard-sandbox-button" onClick$={() => addDefensePlayer()}>Defense</button>
+                            </div>
+                        </div>
+                        <div class="control-button-wrap standard-sandbox-button" onClick$={toggleButtonDrop} >
+                            <button class="add-offense-player button">Manage Field</button>
+                            <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="css-i6dzq1"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path></svg>
+                            <div class="add-player-drop button-drop">
+                                <button class="organize-players standard-sandbox-button" onClick$={organizePlayersHandler} >Organize</button>
+                                <button class="clear-players standard-sandbox-button" onClick$={() => {
+                                    fieldScale.value -= 0.1
+                                }} >Scale -</button>
+                                <button class="clear-players standard-sandbox-button" onClick$={() => {
+                                    fieldScale.value += 0.1
+                                }} >Scale +</button>
+                                <button class="clear-players standard-sandbox-button" onClick$={clearPlayersHandler} >Clear Field</button>
+                                <button class="field-orientation standard-sandbox-button" onClick$={() => {
+                                    if (fieldOrientation.value === 'horizontal') {
+                                        fieldOrientation.value = 'vertical'
+                                    } else {
+                                        fieldOrientation.value = 'horizontal'
+                                    }
+                                }} >Rotate Field</button>
+                            </div>
+                        </div>
+
+                        <div class="control-button-wrap standard-sandbox-button" onClick$={toggleButtonDrop} >
+                            <button class="add-offense-player button">Export Content</button>
+                            <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="css-i6dzq1"><line x1="16.5" y1="9.4" x2="7.5" y2="4.21"></line><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+                            <div class="add-player-drop button-drop">
+                                <button class="add-offense-player standard-sandbox-button" onClick$={exportCanvasImage} >Export Image</button>
+                                <button class="get-positionals-button standard-sandbox-button">Get positionals</button>
+                            </div>
+                        </div>
+
+                        <div class="control-button-wrap standard-sandbox-button" onClick$={toggleButtonDrop} >
+                            <button class="add-offense-player button">Change Theme</button>
+                            <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="css-i6dzq1"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+                            <div class="add-player-drop button-drop">
+                                <button class="standard-sandbox-button" data-offense="true" onClick$={() => {
+                                    const proceed = confirm('Changing the theme will reload the page. Your changes will NOT be saved.')
+                                    if (proceed) {
+                                        url.searchParams.delete('theme');
+                                        location.assign(url);
+                                    }
+                                }}>Light</button>
+                                <button class="standard-sandbox-button" onClick$={() => {
+                                    const proceed = confirm('Changing the theme will reload the page. Your changes will NOT be saved.')
+                                    if (proceed) {
+                                        url.searchParams.set('theme', 'dark');
+                                        location.assign(url);
+                                    }
+                                }}>Dark</button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -1229,25 +1314,25 @@ export default component$(() => {
                 {//@ts-ignore
                     <canvas id="canvas" data-paper-resize="true" data-paper-hidpi="off"></canvas>
                 }
-            </div>
 
-            <div class="view-actions-wrap">
-                <div class="view-actions">
-                    <div class="view-action field-scale">
-                        <span class="field-scale-label">Field scale: {fieldScale.value}</span>
-                        <input onInput$={fieldScaleRangeInputHandler} type="range" min={1} max={3} step={0.05} value={fieldScale.value} name="" id="" />
-                    </div>
-                    <div onClick$={() => {
-                        if (zoom.value > 2) return;
-                        zoom.value += 0.1;
-                    }} class={`zoom-in view-action`}>
-                        <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="css-i6dzq1"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line><line x1="11" y1="8" x2="11" y2="14"></line><line x1="8" y1="11" x2="14" y2="11"></line></svg>
-                    </div>
-                    <div onClick$={() => {
-                        if (zoom.value < 0.5) return;
-                        zoom.value -= 0.1;
-                    }} class={`zoom-out view-action`}>
-                        <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="css-i6dzq1"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line><line x1="8" y1="11" x2="14" y2="11"></line></svg>
+                <div class="view-actions-wrap">
+                    <div class="view-actions">
+                        {/* <div class="view-action field-scale">
+                            <span class="field-scale-label">Field scale: {fieldScale.value}</span>
+                            <input onInput$={fieldScaleRangeInputHandler} type="range" min={1} max={3} step={0.05} value={fieldScale.value} name="" id="" />
+                        </div> */}
+                        <div onClick$={() => {
+                            if (zoom.value > 2) return;
+                            zoom.value += 0.1;
+                        }} class={`zoom-in view-action`}>
+                            <svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="css-i6dzq1"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line><line x1="11" y1="8" x2="11" y2="14"></line><line x1="8" y1="11" x2="14" y2="11"></line></svg>
+                        </div>
+                        <div onClick$={() => {
+                            if (zoom.value < 0.5) return;
+                            zoom.value -= 0.1;
+                        }} class={`zoom-out view-action`}>
+                            <svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="css-i6dzq1"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line><line x1="8" y1="11" x2="14" y2="11"></line></svg>
+                        </div>
                     </div>
                 </div>
             </div>
