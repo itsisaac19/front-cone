@@ -203,7 +203,7 @@ export const generateNotificationPayload = (initialPayload: NotificationPayloadT
 
 export default component$(() => {
 
-const globalPrefersReducedMotion = useSignal(false);
+    const globalPrefersReducedMotion = useSignal(false);
 
     const showSettingsHandler = $(async () => {
 
@@ -1194,7 +1194,7 @@ const globalPrefersReducedMotion = useSignal(false);
 
     return (
     <div>
-        {plan.path ? <Navbar path={plan.path} planData={currentPlanData.value} currentEmail={currentUserEmail.value} /> : <></>}
+        {plan.path ? <Navbar path={plan.path} customLastCrumb={currentPlanData.value.title || 'Untitled'} /> : <></>}
 
         {plan.path ? <AuthBanner accessString={'Editing'} planData={currentPlanData.value} currentEmail={currentUserEmail.value} /> : <></>}
         

@@ -1,14 +1,13 @@
 import { $, component$, useSignal } from '@builder.io/qwik';
-import { Link } from '@builder.io/qwik-city';
 
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 dayjs.extend(relativeTime)
 
 import type { Database } from '~/supabase';
-type PlanRow = Database['public']['Tables']['plans']['Row'];
+type ShardRow = Database['public']['Tables']['shards']['Row'];
 
-export const PlanItem = component$((data: PlanRow) => {
+export const ShardItem = component$((data: ShardRow) => {
     const copyText = useSignal('Copy Link');
     
     const copyLinkHandler = $(async (e: any) => {
@@ -48,10 +47,10 @@ export const PlanItem = component$((data: PlanRow) => {
                 </div>
                 <div class="plan-secondary-content">
                     <div class="plan-edit">
-                        <Link href={`/plans/${data.uuid}`}>Edit Plan</Link>
+                        <a href={`/shards/${data.uuid}`}>Edit Shard</a>
                     </div>
                     <div class="plan-run">
-                        <Link href={`/plans/${data.uuid}/?live=1`}>Run Plan</Link>
+                        <a href={`/shards/${data.uuid}/?live=1`}>Run Shard</a>
                     </div>
                     <u class="plan-copy-link" data-uuid={data.uuid}
                     onClick$={copyLinkHandler}

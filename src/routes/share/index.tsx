@@ -61,7 +61,8 @@ export default component$(() => {
 
     return (
         <div>
-            <Navbar path={pathname} currentEmail={currentUserEmail.value} />
+            <Navbar path={pathname} />
+            <div class="coming-soon">Coming soon!</div>
         </div>
     )    
 })

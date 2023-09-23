@@ -5,13 +5,16 @@ import { BreadCrumbs } from './crumbs';
 
 interface NavbarProps {
     path: string,
-    planData?: any,
-    currentEmail?: string,
+    /**
+     * Replaces the last crumb. Useful if the last crumb is a UUID, and you want to display a title.
+     */
+    customLastCrumb?: any,
 }
 
 export const Navbar = component$<NavbarProps>((props) => {
+    console.log(props.path)
     const path = props.path;
-    const planData = props.planData;
+    const customLastCrumb = props.customLastCrumb;
 
     const isMenuOpen = useSignal(false);
 
@@ -19,15 +22,15 @@ export const Navbar = component$<NavbarProps>((props) => {
         document.querySelector('.menu-sidebar-outer')?.classList.add('open');
         anime({
             targets: '.menu-sidebar-outer',
-            translateY: ['20%', '0%'],
+            translateY: ['10%', '0%'],
             opacity: [0, 1],
-            duration: 1000,
+            duration: 500,
             easing: 'easeOutQuint',
             begin: () => {
-                document.querySelector('.menu-sidebar-outer')?.classList.add('anime-start');
+                document.querySelector('.menu-sidebar-outer')?.classList.add('anime-open');
             },
             complete: () => {
-                document.querySelector('.menu-sidebar-outer')?.classList.remove('anime-start');
+                document.querySelector('.menu-sidebar-outer')?.classList.remove('anime-open');
                 document.querySelector('.menu-sidebar-outer')?.classList.add('open');
             },
         })
@@ -35,12 +38,16 @@ export const Navbar = component$<NavbarProps>((props) => {
     const closeMenu = $(() => {
         anime({
             targets: '.menu-sidebar-outer',
-            translateY: ['0%', '20%'],
+            translateY: ['0%', '10%'],
             opacity: [1, 0],
-            duration: 1000,
+            duration: 500,
             easing: 'easeOutQuint',
+            begin: () => {
+                document.querySelector('.menu-sidebar-outer')?.classList.add('anime-close');
+            },
             complete: () => {
-                if (document.querySelector('.menu-sidebar-outer')?.classList.contains('anime-start')) return;
+                if (document.querySelector('.menu-sidebar-outer')?.classList.contains('anime-open')) return;
+                document.querySelector('.menu-sidebar-outer')?.classList.remove('anime-close');
                 document.querySelector('.menu-sidebar-outer')?.classList.remove('open');
             }
         })
@@ -52,8 +59,9 @@ export const Navbar = component$<NavbarProps>((props) => {
                 <div class="menu-sidebar-inner">
                     <span class="menu-sidebar-label first">NAVIGATION</span>
                     <div class="link-group">
-                        <Link class="menu-sidebar-link" href="/plan">My Plans</Link>
-                        <Link class="menu-sidebar-link" href="/share">Community Plans</Link>
+                        <Link class="menu-sidebar-link" href="/plans">My Plans</Link>
+                        <Link class="menu-sidebar-link" href="/shards">My Shards</Link>
+                        <Link class="menu-sidebar-link" href="/share">Community</Link>
                     </div>
 
                     <span class="menu-sidebar-label">ACCOUNT</span>
@@ -79,7 +87,7 @@ export const Navbar = component$<NavbarProps>((props) => {
             </div>
             
             <div class="navigation-crumbs">
-                <BreadCrumbs path={path} customEnd={planData ? (planData.title || 'Untitled') : null} />
+                <BreadCrumbs path={path} customLastCrumb={customLastCrumb} />
             </div>
         </div>
     );

@@ -45,7 +45,7 @@ export default component$(() => {
             supabase.auth.signOut();
             return
           } else {
-            location.assign('/plan')
+            location.assign('/plans')
           }
         }
     })
