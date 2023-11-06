@@ -180,9 +180,9 @@ const sendingDict: {
 } = {};
 
 const checkDrillTimes = (drills: any) => {
-
     //@ts-ignore
     const current = dayjs();
+    console.log('Checking:', {drills})
 
     drills.forEach((drillData: any) => {
         if (sendingDict[drillData.uuid]?.sending === true) {
@@ -268,6 +268,12 @@ addEventListener('message', async (event) => {
         if (drills) {
             console.log('sw thread: initializing "check-drills" interval', { type, drills, planUUID });
 
+            for (const variableKey in sendingDict){
+                if (Object.prototype.hasOwnProperty.call(sendingDict, variableKey)){
+                    delete sendingDict[variableKey];
+                }
+            }
+
             const checkDrillsInterval = setInterval(() => {
                 checkDrillTimes(drills)
             }, 1000)
@@ -277,6 +283,7 @@ addEventListener('message', async (event) => {
                 drills,
                 planUUID
             };
+            
         }
 
         /* const clients = await self.clients.matchAll();
