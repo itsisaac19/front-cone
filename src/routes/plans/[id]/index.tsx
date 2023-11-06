@@ -3,8 +3,8 @@ import { $, component$, useComputed$, useSignal, useStore, useTask$, useVisibleT
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from '~/supabase';
 import { type DocumentHead, routeLoader$, useLocation, Link } from '@builder.io/qwik-city';
-/* import { TimeEndPicker, TimeStartPicker } from '~/components/dating';
- */import dayjs from 'dayjs';
+import { TimeEndPicker, TimeStartPicker } from '~/components/dating';
+import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import customParseFormat from 'dayjs/plugin/customParseFormat'
 dayjs.extend(relativeTime)
@@ -1085,7 +1085,7 @@ export default component$(() => {
         }
     })
 
-    /* const pickerStartHandler = $((value: dayjs.Dayjs | null) => {
+    const pickerStartHandler = $((value: dayjs.Dayjs | null) => {
         if (value) {
             const formatted = value.format('hh:mm A')
             console.log('timepicker start value', formatted);
@@ -1100,7 +1100,7 @@ export default component$(() => {
 
             currentDrillData.value.time_end = formatted;
         }
-    }) */
+    })
 
     
 
@@ -1434,13 +1434,13 @@ export default component$(() => {
                             class="drill-description-input"  value={currentDrillData.value.description || ''} />
 
                             <div class="drill-dating">
-                                    {/* <form class="drill-time-start">
+                                    <form class="drill-time-start">
                                         <TimeStartPicker endTime={currentDrillData.value.time_end} inputHandler={pickerStartHandler}
                                         value={currentDrillData.value.time_start} client:load />
                                     </form>
                                     <form class="drill-time-end">
                                         <TimeEndPicker startTime={currentDrillData.value.time_start} inputHandler={pickerEndHandler} value={currentDrillData.value.time_end} client:load />
-                                    </form>  */}
+                                    </form> 
                             </div>
 
                             <button class="creation-save-button" onClick$={saveDrillHandler}>{
