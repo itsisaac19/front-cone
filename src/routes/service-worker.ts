@@ -9,6 +9,12 @@
  */
 import { setupServiceWorker } from '@builder.io/qwik-city/service-worker';
 importScripts('https://cdn.jsdelivr.net/npm/dayjs/dayjs.min.js')
+importScripts('https://cdn.jsdelivr.net/npm/dayjs/plugin/customParseFormat.js')
+//@ts-ignore
+dayjs.extend(dayjs_plugin_customParseFormat)
+
+//@ts-ignore
+console.log(dayjs('03:30', 'hh:mm'))
 
 type NotificationPayloadType = {
     /**
@@ -50,7 +56,7 @@ const generateNotificationPayload = (initialPayload: NotificationPayloadType) =>
         finalPayload.body = initialPayload.drillTitle + ' is starting now. Tap to view details.';
     } else if (initialPayload.title === 'Drill Upcoming') {
         finalPayload.body = initialPayload.drillTitle + ' starts in 5 minutes. Tap to view details.';
-    } 
+    }
 
     return finalPayload;
 }
@@ -86,15 +92,17 @@ export type ClientMessageType = 'init-check' | 'stop-check' | 'update-drills';
 
 
 const sendNotification = async (payload: NotificationPayloadType) => {
+    console.log({payload});
+    
     const urlBase64ToUint8Array = (base64String: string) => {
         const padding = '='.repeat((4 - base64String.length % 4) % 4);
         const base64 = (base64String + padding)
-        .replace(/-/g, '+')
-        .replace(/_/g, '/');
+            .replace(/-/g, '+')
+            .replace(/_/g, '/');
 
         const rawData = window.atob(base64);
         const outputArray = new Uint8Array(rawData.length);
-    
+
         for (let i = 0; i < rawData.length; ++i) {
             outputArray[i] = rawData.charCodeAt(i);
         }
@@ -105,10 +113,10 @@ const sendNotification = async (payload: NotificationPayloadType) => {
     const ttl = 3; // seconds
 
     //const serverOrigin = import.meta.env.DEV ? `http://localhost:3000` : `http://localhost:3000`;
-    const serverOrigin = `https://front-cone-server.onrender.com`;
+    const serverOrigin = `https://front-cone-server-production.up.railway.app`;
 
     try {
-        const registration = await navigator.serviceWorker.getRegistration('/')
+        const registration = self.registration;
         if (registration) {
             const existingSub = await registration.pushManager.getSubscription();
             let newSub;
@@ -117,7 +125,7 @@ const sendNotification = async (payload: NotificationPayloadType) => {
                 const response = await fetch(serverOrigin + '/vapidPublicKey');
                 const vapidPublicKey = await response.text();
 
-                console.log({vapidPublicKey});
+                console.log({ vapidPublicKey });
 
                 const convertedVapidKey = urlBase64ToUint8Array(vapidPublicKey);
 
@@ -129,7 +137,7 @@ const sendNotification = async (payload: NotificationPayloadType) => {
                 newSub = existingSub;
             }
 
-            console.log({newSub, existingSub})
+            console.log({ newSub, existingSub })
 
             const subscriptionRequest = await fetch(serverOrigin + '/register', {
                 method: 'post',
@@ -165,32 +173,57 @@ const sendNotification = async (payload: NotificationPayloadType) => {
     return;
 }
 
+const sendingDict: {
+    [uuid: string]: {
+        sending: boolean;
+    };
+} = {};
+
 const checkDrillTimes = (drills: any) => {
-    console.log('checking from SW.')
 
     //@ts-ignore
     const current = dayjs();
-    
+
     drills.forEach((drillData: any) => {
+        if (sendingDict[drillData.uuid]?.sending === true) {
+            return;
+        }
         //@ts-ignore
         const start = dayjs(drillData.time_start, 'hh:mm A');
         //@ts-ignore
         const end = dayjs(drillData.time_end, 'hh:mm A');
 
         if (drillData.status === 'UPCOMING') {
+            /* console.groupCollapsed(drillData.title)
+            console.log({ [drillData.title]: drillData });
+            console.log({ start, current, end }); 
+            console.groupEnd();
+            */
+
             if (current.isAfter(start) && current.isBefore(end)) {
-                console.log('sending notification by now.')
+                console.log('in the ZONE. sending notification.')
 
                 const payload = generateNotificationPayload({
                     title: 'Drill Starting Now',
                     drillTitle: drillData.title || 'Untitled',
                     body: ''
                 })
-                sendNotification(payload)
-                
+                sendNotification(payload);
+                sendingDict[drillData.uuid] = {
+                    sending: true
+                }
+            } else {
+                sendingDict[drillData.uuid] = {
+                    sending: false
+                }
             }
         }
 
+        if (drillData.status === 'LATE') {
+            sendingDict[drillData.uuid] = {
+                sending: false
+            }
+        }
     })
 }
 
@@ -205,12 +238,10 @@ interface intervalData {
     interval: NodeJS.Timer | undefined,
     drills?: [{}],
     planUUID: string
-} 
-
-
-const planNotificationDict: { [key: string]: intervalData } = {
-
 }
+
+
+const planNotificationDict: { [key: string]: intervalData } = {}
 
 addEventListener('message', async (event) => {
     const { type, drills, planUUID } = event.data as EventData;
@@ -240,7 +271,7 @@ addEventListener('message', async (event) => {
             const checkDrillsInterval = setInterval(() => {
                 checkDrillTimes(drills)
             }, 1000)
-    
+
             planNotificationDict[planUUID] = {
                 interval: checkDrillsInterval,
                 drills,
@@ -258,12 +289,12 @@ addEventListener('message', async (event) => {
         }); */
     }
 
-    if (type === 'update-drills') {
+    /* if (type === 'update-drills') {
         const planIntervalData = planNotificationDict[planUUID];
         if (planIntervalData?.interval) {
             planIntervalData.drills = drills;
         }
-    }
+    } */
 
 })
 

@@ -33,4 +33,4 @@ export const SupabaseAuth = qwikify$((props: SupabaseAuthProps) => {
             view={view}
         />
     ); 
-})
+}, { eagerness: 'load' })

@@ -193,6 +193,12 @@ body:has(.hamburger.open) {
   display: grid;
   margin: 0 auto 0 10%;
   width: clamp(100px, 80vw, 400px);
+
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+.auth-outer.loaded {
+  opacity: 1;
 }
 .auth-inner {
   width: auto;
@@ -204,22 +210,39 @@ body:has(.hamburger.open) {
   font-size: 20px;
   font-weight: 500;
 }
-.c-bRTXzr, .supabase-auth-ui_ui-message {
-  color: white;
-  font-family: Satoshi !important;
-  font-weight: 500;
-}
 .supabase-auth-ui_ui-button,
 .supabase-auth-ui_ui-input,
 .supabase-auth-ui_ui-label,
 .supabase-auth-ui_ui-anchor {
   font-family: Satoshi !important;
-  font-weight: 500;
+  font-variation-settings: 'wght' 500;
+  color: white !important;
 }
 
 [type="submit"].supabase-auth-ui_ui-button {
   background-color: rgb(73, 73, 73);
   border-color: rgb(33, 33, 33);
+}
+#auth-sign-in > div > div.supabase-auth-ui_ui-container:has(.supabase-auth-ui_ui-anchor) {
+  display: none;
+}
+#auth-sign-up > div > div.supabase-auth-ui_ui-container:has(.supabase-auth-ui_ui-anchor) {
+  display: none;
+}
+
+.switcher {
+  display: grid;
+}
+.switcher button {
+  cursor: pointer;
+  border-radius: 4px;
+  margin: 0;
+  color: white;
+  border: 1px solid #323232;
+  padding: 10px 15px;
+  background: none;
+  font-family: Satoshi;
+  font-variation-settings: 'wght' 500;
 }
 
 @media screen and (max-width: 800px) {

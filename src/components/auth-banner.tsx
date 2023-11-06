@@ -26,9 +26,6 @@ export const AuthBanner = component$<AuthBannerProps>((props) => {
     const accessString = props.accessString;
     const currentEmail = props.currentEmail;
 
-    console.log(currentEmail);
-
-
     let showEdit = false;
 
     if (planData.user_email == currentEmail && accessString === 'Viewing') {

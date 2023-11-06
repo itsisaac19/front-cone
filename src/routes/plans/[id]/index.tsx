@@ -6,7 +6,9 @@ import { type DocumentHead, routeLoader$, useLocation, Link } from '@builder.io/
 import { TimeEndPicker, TimeStartPicker } from '~/components/dating';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
+import customParseFormat from 'dayjs/plugin/customParseFormat'
 dayjs.extend(relativeTime)
+dayjs.extend(customParseFormat)
 
 import { CurrentLiveDrillBox, DrillItem } from '~/components/drill-item';
 type PlanRow = Database['public']['Tables']['plans']['Row'];
@@ -148,7 +150,7 @@ const getDrillIndex = (drillUUID?: string) => {
         const drillIndex = [...wrapper.children].findIndex(drillElement => {
             return drillElement.getAttribute('uuid') == drillUUID;
         })
-        console.log({ drillIndex });
+        //console.log({ drillIndex });
         return drillIndex;
     } else {
         return numberOfDrills; // Could be 0
@@ -282,7 +284,7 @@ export default component$(() => {
         track(() => realTimeEvent.value);
         const value = realTimeEvent.value;
         if (value) {
-            console.log('realtime event', value)
+            console.log('realtime event', {payload: value})
             savePlanHandler();
         }
     })
@@ -345,11 +347,11 @@ export default component$(() => {
 
             let smallest: 'start' | 'end' | undefined;
         
-            drills.forEach(obj => {
+            drills.filter(D => D.status !== 'COMPLETED').forEach(obj => {
                 if (obj.hour_start !== null && obj.hour_end !== null) {
                     if (!obj.hour_start || !obj.hour_end) return;
-                    const startDifference = Math.abs(dayjs(obj.time_start, 'h:mm A').diff(dayjs()));
-                    const endDifference = Math.abs(dayjs(obj.time_end, 'h:mm A').diff(dayjs()));
+                    const startDifference = Math.abs(dayjs(obj.time_start, 'hh:mm A').diff(dayjs()));
+                    const endDifference = Math.abs(dayjs(obj.time_end, 'hh:mm A').diff(dayjs()));
                     const smallestObjDifference = Math.min(startDifference, endDifference);
 
                     if (endDifference < startDifference) {
@@ -430,7 +432,7 @@ export default component$(() => {
     const isInitialNotificationCheckedState = useSignal(true);
 
     const startNotificationChecking = $(async () => {
-        const registration = await navigator.serviceWorker.getRegistration();
+        const registration = await navigator?.serviceWorker?.getRegistration();
         
         if (registration) {
             if (!plan.data || !planDrills.value) {
@@ -567,7 +569,8 @@ export default component$(() => {
                 schema: 'public', 
                 table: 'drills' 
             }, (payload) => {
-                console.log('DRILL change received:', payload);
+                console.groupCollapsed('DRILL change received');
+                console.log({payload})
                 if (payload.eventType === 'DELETE') {
                     const drill = userDrills?.value?.find(drillData => {
                         return drillData.uuid == payload.old.uuid;
@@ -587,12 +590,14 @@ export default component$(() => {
                         console.log(`Change is NOT mine: `, payload.eventType);
                     }
                 }
+                console.groupEnd();
             }).on('postgres_changes', { 
                 event: '*',
                 schema: 'public', 
                 table: 'plans' 
             }, (payload) => {
-                console.log('PLAN change received:', payload);
+                console.groupCollapsed('PLAN change received');
+                console.log({payload})
                 if (payload.eventType === 'DELETE') {
                     console.log('DELETE')
                 }
@@ -606,10 +611,13 @@ export default component$(() => {
                         }
 
                         currentPlanData.value = payload.new;
+
+                        startNotificationChecking();
                     } else {
                         console.log(`Change is NOT mine: `, payload.eventType);
                     } 
                 }
+                console.groupEnd();
             }).subscribe();
 
             window.onbeforeunload = () => {
@@ -756,7 +764,7 @@ export default component$(() => {
 
         const drillData = currentDrillData.value;
 
-        console.log('Saving:', {drillData});
+        console.log(`Saving ${drillData.title}:`, {drillData});
 
         drillData.user_id = plan.data?.user_id;
         drillData.user_email = plan.data?.user_email;
@@ -978,6 +986,15 @@ export default component$(() => {
             const start = dayjs(drillData.time_start, 'hh:mm A');
             const end = dayjs(drillData.time_end, 'hh:mm A');
 
+            if (current.isBefore(start)) {
+                if (drillData.status != 'UPCOMING') {
+                    drillData.status = 'UPCOMING';
+                    currentDrillData.value = drillData;
+    
+                    return saveDrillHandler();
+                }
+            }
+
             if (current.isAfter(end)) {
                 if (drillData.status != 'COMPLETED' && drillData.status != 'LATE') {
                     drillData.status = 'LATE';
@@ -993,12 +1010,13 @@ export default component$(() => {
                     currentDrillData.value = drillData;
 
                     if (notificationCheckedState.value === true && isPlanLive.value === true) {
-                        const payload = generateNotificationPayload({
+                        // Shouldn't need this if we are checking from SW...?
+                        /* const payload = generateNotificationPayload({
                             title: 'Drill Starting Now',
                             drillTitle: drillData.title || 'Untitled',
                             body: ''
                         })
-                        sendNotification(payload)
+                        sendNotification(payload) */
                     }
 
                     return saveDrillHandler();
@@ -1122,10 +1140,11 @@ export default component$(() => {
 
     const expandList = useSignal(false);
 
-    const expandCurrentLiveDrillBox = $((e: any) => {
-        console.log(e)
-        const button = e.target as HTMLElement;
-        button.parentElement?.classList.toggle('expand');
+    const expandCurrentLiveDrillBox = $((e: any, element: any) => {
+        const event = e as PointerEvent;
+        console.log(event)
+        const target = element as HTMLElement;
+        target.parentElement?.classList.toggle('expand');
     })
 
     const expandDrillLibraryList = $(() => {
@@ -1445,6 +1464,8 @@ export default component$(() => {
 
         <div>Save Plan</div>
         <div>Share Plan</div>
+
+        <script src="https://cdn.jsdelivr.net/npm/dayjs/plugin/customParseFormat.js"></script>
     </div>
     )
 }) 
