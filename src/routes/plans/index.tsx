@@ -134,7 +134,7 @@ export default component$(() => {
     return (
         <div class="dashboard-outer">
             <div class="dashboard-inner">
-                {crumbs.value ? <Navbar path={crumbs.value.path} currentEmail={currentUserEmail.value} /> : <></>}
+                {crumbs.value ? <Navbar path={crumbs.value.path} /> : <></>}
                 <div class="dashboard-content">
                     <div class="dash-header-wrap">
                         <div class="dash-header">

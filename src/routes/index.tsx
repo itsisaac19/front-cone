@@ -1,5 +1,4 @@
-//@ts-nocheck
-import { component$, useVisibleTask$ } from '@builder.io/qwik';
+import { $, component$, useSignal, useVisibleTask$ } from '@builder.io/qwik';
 import { useLocation, type DocumentHead } from '@builder.io/qwik-city';
 import { createClient } from '@supabase/supabase-js';
 import { SupabaseAuth } from '~/components/supabase-auth';
@@ -10,13 +9,27 @@ const supabase = createClient('https://mockfcvyjtpqnpctspcq.supabase.co', 'eyJhb
     }
 });
 
+type viewString = 'sign_up' | 'sign_in' | 'magic_link' | 'forgotten_password' | 'update_password' | 'verify_otp';
+
 export default component$(() => {
   const { url } = useLocation();
+  const loaded = useSignal(false);
+  const view = useSignal<viewString>('sign_up');
 
-  useVisibleTask$(() => {
+  const initialBuffer = $(() => {
+    return new Promise(resolve => {
+        setTimeout(resolve, 200);
+    })
+  })
+
+  useVisibleTask$(async () => {
+    await initialBuffer();
+    loaded.value = true;
+
     let signout = false;
 
-    if (url.searchParams.get('signout') == 1) {
+    const signoutParam = url.searchParams.get('signout');
+    if (signoutParam && parseInt(signoutParam) === 1) {
       signout = true;
     }
 
@@ -45,7 +58,7 @@ export default component$(() => {
             supabase.auth.signOut();
             return
           } else {
-            location.assign('/plan')
+            location.assign('/plans')
           }
         }
     })
@@ -78,13 +91,20 @@ export default component$(() => {
         <img width={1656} height={3584} src="/frontcone-standard-plan.png" alt="" />
       </div>
 
-      <div class={`auth-outer`}>
+      <div class={`auth-outer ${loaded.value ? 'loaded' : ''}`}>
           <div class="auth-inner">
               <div class="auth-header">
-                  Create an Account
+              {view.value == 'sign_up' ? 'Sign up to create your account.' : 'Welcome back. Sign in to continue.'}
               </div>
               <div class="auth-wrapper">
-                  <SupabaseAuth view={'sign_up'} client:load />
+                  {//@ts-ignore
+                    <SupabaseAuth view={view.value} />
+                  }
+                  <div class="switcher">
+                      {view.value === 'sign_up' ? 
+                      <button onClick$={() => {view.value = 'sign_in'}}>I already have an account</button> 
+                      : <button onClick$={() => {view.value = 'sign_up'}}>New here? Create a new account</button> }
+                  </div>
               </div>
           </div>
       </div>

@@ -348,7 +348,7 @@ export default component$(() => {
     return (
         <div class="dashboard-outer">
             <div class="dashboard-inner">
-                {plan.value ? <Navbar path={plan.value.path} planData={currentPlanData.value} currentEmail={currentUserEmail.value} /> : <></>}
+                {plan.value ? <Navbar path={plan.value.path} /> : <></>}
                 {plan.value ? <AuthBanner accessString={'Viewing'} planData={currentPlanData.value} currentEmail={currentUserEmail.value} /> : <></>}
                 <div class="view-plan-wrap">
                     <div class="meta-actions-outer">

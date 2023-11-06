@@ -2,7 +2,7 @@ import { component$ } from '@builder.io/qwik'
 
 interface BreadCrumbsProps {
     path: string,
-    customEnd?: string | null
+    customLastCrumb?: string | null
 }
 export const BreadCrumbs = component$<BreadCrumbsProps>((props) => {
 
@@ -27,8 +27,8 @@ export const BreadCrumbs = component$<BreadCrumbsProps>((props) => {
                 currentLength = currentLength + s.length ?? 1;
                 if (s.length > 0) {
                     const isLast = (s == separated[separated.length - 2]);
-                    if (isLast && props.customEnd) {
-                        return el(props.customEnd, currentLength, isLast)
+                    if (isLast && props.customLastCrumb) {
+                        return el(props.customLastCrumb, currentLength, isLast)
                     }
                     return el(s, currentLength, isLast)
                 }

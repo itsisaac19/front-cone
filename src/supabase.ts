@@ -9,7 +9,7 @@ export type Json =
 export interface Database {
   public: {
     Tables: {
-      'deleted-drills': {
+      "deleted-drills": {
         Row: {
           created_at: string | null
           description: string | null
@@ -63,7 +63,7 @@ export interface Database {
         }
         Relationships: []
       }
-      'deleted-plans': {
+      "deleted-plans": {
         Row: {
           created_at: string | null
           description: string | null
@@ -187,6 +187,42 @@ export interface Database {
           notifications?: boolean | null
           shared_link?: string | null
           status?: string | null
+          title?: string | null
+          updated_at?: string | null
+          user_email?: string | null
+          user_id?: string | null
+          uuid?: string
+        }
+        Relationships: []
+      }
+      shards: {
+        Row: {
+          animation: Json
+          created_at: string
+          description: string | null
+          field_orientation: string
+          title: string | null
+          updated_at: string | null
+          user_email: string | null
+          user_id: string | null
+          uuid: string
+        }
+        Insert: {
+          animation?: Json
+          created_at?: string
+          description?: string | null
+          field_orientation?: string
+          title?: string | null
+          updated_at?: string | null
+          user_email?: string | null
+          user_id?: string | null
+          uuid?: string
+        }
+        Update: {
+          animation?: Json
+          created_at?: string
+          description?: string | null
+          field_orientation?: string
           title?: string | null
           updated_at?: string | null
           user_email?: string | null
